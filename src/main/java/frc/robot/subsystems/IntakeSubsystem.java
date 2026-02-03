@@ -8,40 +8,59 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public class IntakeSubsystem extends SubsystemBase {
 
   private final TalonFX intakeMotor;
   private final TalonFX pivotMotor;
   private boolean raised;
+  private boolean lowered;
 
   /** Creates a new Intake. */
   public IntakeSubsystem() {
-    intakeMotor = new TalonFX(14, "FastFD"); //CORRECT
-    pivotMotor = new TalonFX(13, "FastFD"); //INCORRECT
+    intakeMotor = new TalonFX(14, "FastFD"); // CORRECT
+    pivotMotor = new TalonFX(13, "FastFD"); // INCORRECT
 
     pivotMotor.setPosition(0);
+    pivotMotor.setNeutralMode(NeutralModeValue.Brake);
     raised = true;
+    lowered = false;
   }
 
-  // public Command raise() {
-  //   return new FunctionalCommand(
-  //     () -> {},
-  //     () -> {
-  //       raised = pivotMotor.getPosition().getValueAsDouble() >= 0.5;
-  //     },
-  //     interrupted -> {
+  public Command raise() {
+    return new FunctionalCommand(
+        () -> {
+        },
+        () -> {
+          pivotMotor.set(0.5);
+          raised = pivotMotor.getPosition().getValueAsDouble() >= 0;
+        },
+        interrupted -> {
+          pivotMotor.set(0);
+        },
+        () -> raised,
+        this);
+  }
 
-  //     },
-  //     () -> raised,
-  //     this
-  //   );
-  // }
-
-  // public Command lower() {
-
-  // }
+  public Command lower() {
+    return new FunctionalCommand(
+        () -> {
+        },
+        () -> {
+          pivotMotor.set(-0.5);
+          lowered = pivotMotor.getPosition().getValueAsDouble() <= -2.25;
+        },
+        interrupted -> {
+          pivotMotor.set(0);
+        },
+        () -> lowered,
+        this);
+  }
 
   public Command intake() {
     return new InstantCommand(() -> intakeMotor.set(0.6), this);
