@@ -32,35 +32,49 @@ public class IntakeSubsystem extends SubsystemBase {
     lowered = false;
   }
 
-  public Command raise() {
-    return new FunctionalCommand(
-        () -> {
-        },
-        () -> {
-          pivotMotor.set(0.5);
-          raised = pivotMotor.getPosition().getValueAsDouble() >= 0;
-        },
-        interrupted -> {
-          pivotMotor.set(0);
-        },
-        () -> raised,
-        this);
+  public Command raiseManual() {
+    return new InstantCommand(() -> pivotMotor.set(0.4));
   }
 
-  public Command lower() {
-    return new FunctionalCommand(
-        () -> {
-        },
-        () -> {
-          pivotMotor.set(-0.5);
-          lowered = pivotMotor.getPosition().getValueAsDouble() <= -2.25;
-        },
-        interrupted -> {
-          pivotMotor.set(0);
-        },
-        () -> lowered,
-        this);
+  public Command lowerManual() {
+    return new InstantCommand(() -> pivotMotor.set(-0.4));
   }
+
+  public Command stopPivot() {
+    return new InstantCommand(() -> pivotMotor.set(0));
+  }
+
+  //FIX THESE SOMEDAY
+
+  // public Command raise() {
+  //   return new FunctionalCommand(
+  //       () -> {
+  //       },
+  //       () -> {
+  //         pivotMotor.set(0.5);
+  //         raised = pivotMotor.getPosition().getValueAsDouble() >= 0;
+  //       },
+  //       interrupted -> {
+  //         pivotMotor.set(0);
+  //       },
+  //       () -> raised,
+  //       this);
+  // }
+
+  // public Command lower() {
+  //   return new FunctionalCommand(
+  //       () -> {
+  //       },
+  //       () -> {
+  //         pivotMotor.set(-0.5);
+  //         lowered = pivotMotor.getPosition().getValueAsDouble() <= -2.25; //SEVERELY INCORRECT
+  //       },
+  //       interrupted -> {
+  //         pivotMotor.set(0);
+  //       },
+  //       () -> lowered,
+  //       this);
+  // }
 
   public Command intake() {
     return new InstantCommand(() -> intakeMotor.set(0.6), this);

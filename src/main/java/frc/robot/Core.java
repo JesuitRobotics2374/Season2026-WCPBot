@@ -9,18 +9,21 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 
@@ -44,6 +47,7 @@ public class Core {
 
     private final IntakeSubsystem m_intake = new IntakeSubsystem();
     private final ShooterSubsystem m_shooter = new ShooterSubsystem();
+    private final HopperSubsystem m_hopper = new HopperSubsystem();
 
     public Core() {
         configureBindings();
@@ -54,8 +58,14 @@ public class Core {
 
         ShuffleboardTab tab = Shuffleboard.getTab("Shooter");
 
-        tab.addDouble("Speed", () -> m_shooter.getSpeedRpm()).withPosition(2, 1).withSize(5, 3);
-        tab.addDouble("Target Speed", () -> m_shooter.getTargetRpm()).withPosition(7, 1).withSize(2, 1);
+        tab.addDouble("Speed Center", () -> m_shooter.getSpeedRpmCenter()).withPosition(2, 1).withSize(5, 3);
+        tab.addDouble("Target Speed Center", () -> m_shooter.getTargetRpmCenter()).withPosition(7, 1).withSize(2, 1);
+
+        tab.addDouble("Speed Right", () -> m_shooter.getSpeedRpmRight()).withPosition(2, 1).withSize(5, 3);
+        tab.addDouble("Target Speed Right", () -> m_shooter.getTargetRpmRight()).withPosition(7, 1).withSize(2, 1);
+
+        tab.addDouble("Speed Left", () -> m_shooter.getSpeedRpmLeft()).withPosition(2, 1).withSize(5, 3);
+        tab.addDouble("Target Speed Left", () -> m_shooter.getTargetRpmLeft()).withPosition(7, 1).withSize(2, 1);
 
     }
 
@@ -67,9 +77,21 @@ public class Core {
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(-driveController.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
                     .withVelocityY(-driveController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-driveController.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
-        );
+                        .withRotationalRate(-driveController.getRightX() * MaxAngularRate) // Drive counterclockwise
+                                                                                           // with negative X (left)
+                ));
+
+        m_shooter.setDefaultCommand(
+                Commands.run(() -> {
+                    double speed = operatorController.getRightY();
+                    if (speed > 0.1) { // Added a small deadband
+                        m_shooter.raise();
+                    } else if (speed < -0.1) {
+                        m_shooter.lower();
+                    } else {
+                        m_shooter.stopActuator();
+                    }
+                }, m_shooter));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
@@ -83,26 +105,41 @@ public class Core {
             point.withModuleDirection(new Rotation2d(-driveController.getLeftY(), -driveController.getLeftX()))
         ));
 
-        // Run SysId routines when holding back/start and X/Y.
-        // Note that each routine should be run exactly once in a single log.
-        driveController.back().and(driveController.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        driveController.back().and(driveController.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        driveController.start().and(driveController.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        driveController.start().and(driveController.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
         // Reset the field-centric heading on left bumper press.
-        driveController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        driveController.back().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
 
-        operatorController.a().onTrue(m_intake.intake());
-        operatorController.b().onTrue(m_intake.stop());
+        // SHOOTER
 
         operatorController.povUp().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
         operatorController.povDown().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
+        operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpmLeft(100)));
+        operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmLeft(100)));
+
+        operatorController.rightTrigger().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpmRight(100)));
+        operatorController.leftTrigger().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmRight(100)));
+
+        operatorController.povRight().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpmCenter(100)));
+        operatorController.povLeft().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmCenter(100)));
+
         operatorController.y().onTrue(new InstantCommand(() -> m_shooter.rotateAtCached()));
-        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotate(3000)));
+        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotate(3000, 3000, 3000)));
+
+        // INTAKE
+
+        operatorController.a().whileTrue(m_intake.intake()).onFalse(m_intake.stop());
+
+        driveController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
+        driveController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
+
+        // HOPPER
+
+        operatorController.back().onTrue(m_hopper.roll());
+        operatorController.start().whileTrue(m_hopper.pulse()).onFalse(m_hopper.stop());
+        operatorController.leftStick().onTrue(m_hopper.stop());
+
     }
 
     public Command getAutonomousCommand() {
