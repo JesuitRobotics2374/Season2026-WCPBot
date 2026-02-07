@@ -21,7 +21,7 @@ public class HopperSubsystem extends SubsystemBase {
   public HopperSubsystem() {
     rolling = false;
     pulsing = false;
-    rollerMotor = new TalonFX(23, "FastFD"); // ID incorrect
+    rollerMotor = new TalonFX(34); 
   }
 
   /**

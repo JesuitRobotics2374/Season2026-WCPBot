@@ -125,7 +125,7 @@ public class Core {
         operatorController.povLeft().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmCenter(100)));
 
         operatorController.y().onTrue(new InstantCommand(() -> m_shooter.rotateAtCached()));
-        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotate(3000, 3000, 3000)));
+        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.stop()));
 
         // INTAKE
 
@@ -137,7 +137,6 @@ public class Core {
         // HOPPER
 
         operatorController.back().onTrue(m_hopper.roll());
-        operatorController.start().whileTrue(m_hopper.pulse()).onFalse(m_hopper.stop());
         operatorController.leftStick().onTrue(m_hopper.stop());
 
     }

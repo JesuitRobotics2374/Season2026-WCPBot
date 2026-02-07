@@ -23,8 +23,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Creates a new Intake. */
   public IntakeSubsystem() {
-    intakeMotor = new TalonFX(14, "FastFD"); // CORRECT
-    pivotMotor = new TalonFX(13, "FastFD"); // INCORRECT
+    intakeMotor = new TalonFX(37);
+    pivotMotor = new TalonFX(35); 
 
     pivotMotor.setPosition(0);
     pivotMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -33,11 +33,11 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public Command raiseManual() {
-    return new InstantCommand(() -> pivotMotor.set(0.4));
+    return new InstantCommand(() -> pivotMotor.set(0.1));
   }
 
   public Command lowerManual() {
-    return new InstantCommand(() -> pivotMotor.set(-0.4));
+    return new InstantCommand(() -> pivotMotor.set(-0.1));
   }
 
   public Command stopPivot() {
@@ -77,7 +77,7 @@ public class IntakeSubsystem extends SubsystemBase {
   // }
 
   public Command intake() {
-    return new InstantCommand(() -> intakeMotor.set(0.6), this);
+    return new InstantCommand(() -> intakeMotor.set(-0.7), this);
   }
 
   public Command stop() {
@@ -85,7 +85,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public Command purge() {
-    return new InstantCommand(() -> intakeMotor.set(-0.3), this);
+    return new InstantCommand(() -> intakeMotor.set(0.3), this);
   }
 
   @Override

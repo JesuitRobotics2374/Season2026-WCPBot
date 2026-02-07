@@ -36,17 +36,17 @@ public class ShooterSubsystem extends SubsystemBase {
     public ShooterSubsystem() {
 
         actuator1 = new LinearActuator(0, 100, 2);
-        actuator2 = new LinearActuator(0, 100, 2);
+        actuator2 = new LinearActuator(2, 100, 2);
 
-        left = new TalonFX(11);
-        center = new TalonFX(12);
-        right = new TalonFX(13);
+        left = new TalonFX(31);
+        center = new TalonFX(32);
+        right = new TalonFX(33);
 
-        kicker = new TalonFX(1);
+        kicker = new TalonFX(36);
 
         TalonFXConfiguration controlCfg = new TalonFXConfiguration();
         controlCfg.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        controlCfg.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        controlCfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         
         // Current Limits
         controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
@@ -57,9 +57,22 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfg.Slot0.kD = 0.0001;
         controlCfg.Slot0.kV = 0.12; // ~12V
 
+        TalonFXConfiguration controlCfgRight = new TalonFXConfiguration();
+        controlCfgRight.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        controlCfgRight.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        
+        // Current Limits
+        controlCfgRight.CurrentLimits.SupplyCurrentLimitEnable = true;
+        controlCfgRight.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
+
+        controlCfgRight.Slot0.kP = 0.11;
+        controlCfgRight.Slot0.kI = 0.5;
+        controlCfgRight.Slot0.kD = 0.0001;
+        controlCfgRight.Slot0.kV = 0.12; // ~12V
+
         left.getConfigurator().apply(controlCfg);
         center.getConfigurator().apply(controlCfg);
-        right.getConfigurator().apply(controlCfg);
+        right.getConfigurator().apply(controlCfgRight);
     }
 
     private void setTargetRpmCenter(double rpm) {
@@ -150,7 +163,7 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public void rotate(double rpmLeft, double rpmRight, double rpmCenter) {
         // Convert RPM to RPS
-        kicker.set(0.6);
+        kicker.set(0.3);
         left.setControl(velocityRequest.withVelocity(rpmLeft * RPM_TO_RPS));
         center.setControl(velocityRequest.withVelocity(rpmCenter * RPM_TO_RPS));
         right.setControl(velocityRequest.withVelocity(rpmRight * RPM_TO_RPS));
@@ -205,7 +218,5 @@ public class ShooterSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        actuator1.updateCurPos();
-        actuator2.updateCurPos();
     }
 }
