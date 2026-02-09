@@ -30,6 +30,7 @@ public class ShooterSubsystem extends SubsystemBase {
     
     // Constants
     private static final double MAX_RPM = 6000.0; 
+    private static final double MIN_RPM = 5;
     private static final double RPM_TO_RPS = 1.0 / 60.0;
     private static final double CURRENT_LIMIT = 40.0; // Amps
 
@@ -45,7 +46,7 @@ public class ShooterSubsystem extends SubsystemBase {
         kicker = new TalonFX(36);
 
         TalonFXConfiguration controlCfg = new TalonFXConfiguration();
-        controlCfg.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        controlCfg.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         controlCfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         
         // Current Limits
@@ -58,7 +59,7 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfg.Slot0.kV = 0.12; // ~12V
 
         TalonFXConfiguration controlCfgRight = new TalonFXConfiguration();
-        controlCfgRight.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        controlCfgRight.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         controlCfgRight.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         
         // Current Limits
@@ -191,8 +192,8 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void stopActuator() {
-        actuator1.setSpeed(0);
-        actuator2.setSpeed(0);
+        actuator1.setDisabled();
+        actuator2.setDisabled();
     }
 
     /**
