@@ -85,6 +85,11 @@ public class IntakeSubsystem extends SubsystemBase {
     return new InstantCommand(() -> intakeMotor.set(0.3), this);
   }
 
+  public double getIntakeSupplyCurrent() {
+    return intakeMotor.getSupplyCurrent().getValueAsDouble() +
+           pivotMotor.getSupplyCurrent().getValueAsDouble();
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run

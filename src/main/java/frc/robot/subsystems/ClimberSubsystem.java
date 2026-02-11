@@ -112,6 +112,11 @@ public class ClimberSubsystem extends SubsystemBase {
     return false;
   }
 
+  public double getClimberSupplyCurrent() {
+    return climberMotor.getSupplyCurrent().getValueAsDouble() +
+           follower.getSupplyCurrent().getValueAsDouble();
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
