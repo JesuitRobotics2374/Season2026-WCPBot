@@ -23,8 +23,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Creates a new Intake. */
   public IntakeSubsystem() {
-    intakeMotor = new TalonFX(14, "FastFD"); // CORRECT
-    pivotMotor = new TalonFX(13, "FastFD"); // INCORRECT
+    intakeMotor = new TalonFX(37);
+    pivotMotor = new TalonFX(35); 
 
     pivotMotor.setPosition(0);
     pivotMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -32,38 +32,52 @@ public class IntakeSubsystem extends SubsystemBase {
     lowered = false;
   }
 
-  public Command raise() {
-    return new FunctionalCommand(
-        () -> {
-        },
-        () -> {
-          pivotMotor.set(0.5);
-          raised = pivotMotor.getPosition().getValueAsDouble() >= 0;
-        },
-        interrupted -> {
-          pivotMotor.set(0);
-        },
-        () -> raised,
-        this);
+  public Command raiseManual() {
+    return new InstantCommand(() -> pivotMotor.set(0.1));
   }
 
-  public Command lower() {
-    return new FunctionalCommand(
-        () -> {
-        },
-        () -> {
-          pivotMotor.set(-0.5);
-          lowered = pivotMotor.getPosition().getValueAsDouble() <= -2.25;
-        },
-        interrupted -> {
-          pivotMotor.set(0);
-        },
-        () -> lowered,
-        this);
+  public Command lowerManual() {
+    return new InstantCommand(() -> pivotMotor.set(-0.1));
   }
+
+  public Command stopPivot() {
+    return new InstantCommand(() -> pivotMotor.set(0));
+  }
+
+  //FIX THESE SOMEDAY
+
+  // public Command raise() {
+  //   return new FunctionalCommand(
+  //       () -> {
+  //       },
+  //       () -> {
+  //         pivotMotor.set(0.5);
+  //         raised = pivotMotor.getPosition().getValueAsDouble() >= 0;
+  //       },
+  //       interrupted -> {
+  //         pivotMotor.set(0);
+  //       },
+  //       () -> raised,
+  //       this);
+  // }
+
+  // public Command lower() {
+  //   return new FunctionalCommand(
+  //       () -> {
+  //       },
+  //       () -> {
+  //         pivotMotor.set(-0.5);
+  //         lowered = pivotMotor.getPosition().getValueAsDouble() <= -2.25; //SEVERELY INCORRECT
+  //       },
+  //       interrupted -> {
+  //         pivotMotor.set(0);
+  //       },
+  //       () -> lowered,
+  //       this);
+  // }
 
   public Command intake() {
-    return new InstantCommand(() -> intakeMotor.set(0.6), this);
+    return new InstantCommand(() -> intakeMotor.set(-0.7), this);
   }
 
   public Command stop() {
@@ -71,7 +85,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public Command purge() {
-    return new InstantCommand(() -> intakeMotor.set(-0.3), this);
+    return new InstantCommand(() -> intakeMotor.set(0.3), this);
   }
 
   @Override
