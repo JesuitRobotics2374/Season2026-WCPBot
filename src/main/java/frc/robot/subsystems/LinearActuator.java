@@ -68,6 +68,7 @@ public class LinearActuator extends Servo {
    *
    * @return Servo Position [mm]
    */
+  @Override
   public double getPosition() {
     return curPos;
   }
