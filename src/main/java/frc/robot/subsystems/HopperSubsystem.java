@@ -80,6 +80,13 @@ public class HopperSubsystem extends SubsystemBase {
         this);
   }
 
+   /**
+   * @return The current supplied to this motor in amps
+   */
+  public double getHopperSupplyCurrent() {
+    return rollerMotor.getSupplyCurrent().getValueAsDouble(); //FOR NOW
+  }
+
   @Override
   public void periodic() {
     // This method will be called once per scheduler run

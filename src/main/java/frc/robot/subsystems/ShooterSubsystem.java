@@ -217,6 +217,19 @@ public class ShooterSubsystem extends SubsystemBase {
         return right.getRotorVelocity().getValueAsDouble() * 60.0;
     }
 
+    public double getShooterSupplyCurrent() {
+        return right.getSupplyCurrent().getValueAsDouble() +
+               left.getSupplyCurrent().getValueAsDouble() +
+               center.getSupplyCurrent().getValueAsDouble();
+    }
+
+    public boolean isRunning(double rpm) {
+        if (rpm != 0) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void periodic() {
     }
