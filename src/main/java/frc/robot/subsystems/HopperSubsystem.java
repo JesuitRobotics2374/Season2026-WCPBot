@@ -16,10 +16,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class HopperSubsystem extends SubsystemBase {
   private final TalonFX rollerMotor;
   private boolean rolling;
+  private boolean pulsing;
 
   public HopperSubsystem() {
     rolling = false;
-    rollerMotor = new TalonFX(23, "FastFD"); // ID incorrect
+    pulsing = false;
+    rollerMotor = new TalonFX(34); 
   }
 
   /**
@@ -31,16 +33,19 @@ public class HopperSubsystem extends SubsystemBase {
 
   public Command roll() {
     rolling = true;
+    pulsing = false;
     return new InstantCommand(() -> rollerMotor.set(0.5));
   }
 
   public Command purge() {
     rolling = false;
+    pulsing = false;
     return new InstantCommand(() -> rollerMotor.set(-0.5));
   }
 
   public Command stop() {
     rolling = false;
+    pulsing = false;
     return new InstantCommand(() -> rollerMotor.stopMotor());
   }
 
@@ -51,7 +56,8 @@ public class HopperSubsystem extends SubsystemBase {
         // 1. Initialize: Start the timer when the command begins
         () -> {
           timer.restart();
-          rolling = true;
+          rolling = false;
+          pulsing = true;
         },
         // 2. Execute: Toggle motor power based on the timer
         () -> {
@@ -66,11 +72,19 @@ public class HopperSubsystem extends SubsystemBase {
         interrupted -> {
           rollerMotor.stopMotor();
           rolling = false;
+          pulsing = false;
         },
         // 4. isFinished: Return false so it runs until you release the button
-        () -> false,
+        () -> !pulsing,
         // Add the subsystem requirement
         this);
+  }
+
+   /**
+   * @return The current supplied to this motor in amps
+   */
+  public double getHopperSupplyCurrent() {
+    return rollerMotor.getSupplyCurrent().getValueAsDouble(); //FOR NOW
   }
 
   @Override
