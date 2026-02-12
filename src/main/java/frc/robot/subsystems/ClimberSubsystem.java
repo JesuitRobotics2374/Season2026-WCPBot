@@ -25,9 +25,9 @@ public class ClimberSubsystem extends SubsystemBase {
   /** Creates a new Climber. */
   public ClimberSubsystem() {
 
-    this.climberMotor = new TalonFX(1);
+    this.climberMotor = new TalonFX(41);
 
-    follower = new TalonFX(2);
+    follower = new TalonFX(42);
 
     climberMotor.setPosition(0);
     follower.setPosition(0);

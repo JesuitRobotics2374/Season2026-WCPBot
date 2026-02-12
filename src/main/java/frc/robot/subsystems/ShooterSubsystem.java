@@ -192,8 +192,8 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void stopActuator() {
-        actuator1.setDisabled();
-        actuator2.setDisabled();
+        actuator1.setSpeed(0);
+        actuator2.setSpeed(0);
     }
 
     /**
