@@ -16,17 +16,14 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX center;
     private final TalonFX right;
     private final TalonFX kicker;
-
-    private final LinearActuator actuator1;
-    private final LinearActuator actuator2;
     
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
     private double targetRpm = 0.0;
-    private double targetRpmCenter = 0.0;
-    private double targetRpmLeft = 0.0;
-    private double targetRpmRight = 0.0;
+    private double targetRpmCenter = 3500;
+    private double targetRpmLeft = 3000;
+    private double targetRpmRight = 3000;
     
     // Constants
     private static final double MAX_RPM = 6000.0; 
@@ -34,10 +31,18 @@ public class ShooterSubsystem extends SubsystemBase {
     private static final double RPM_TO_RPS = 1.0 / 60.0;
     private static final double CURRENT_LIMIT = 40.0; // Amps
 
-    public ShooterSubsystem() {
+    public enum Side {
+        LEFT,
+        CENTER,
+        RIGHT;
+    }
 
-        actuator1 = new LinearActuator(0, 100, 2);
-        actuator2 = new LinearActuator(2, 100, 2);
+    private Side selectedSide = Side.LEFT;
+
+    private boolean isShooting = false;
+    private boolean isKicking = false;
+
+    public ShooterSubsystem() {
 
         left = new TalonFX(31);
         center = new TalonFX(32);
@@ -53,9 +58,9 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfg.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
 
-        controlCfg.Slot0.kP = 0.11;
-        controlCfg.Slot0.kI = 0.5;
-        controlCfg.Slot0.kD = 0.0001;
+        controlCfg.Slot0.kP = 0.09;
+        controlCfg.Slot0.kI = 0;
+        controlCfg.Slot0.kD = 0.001;
         controlCfg.Slot0.kV = 0.12; // ~12V
 
         TalonFXConfiguration controlCfgRight = new TalonFXConfiguration();
@@ -66,14 +71,18 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfgRight.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfgRight.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
 
-        controlCfgRight.Slot0.kP = 0.11;
-        controlCfgRight.Slot0.kI = 0.5;
-        controlCfgRight.Slot0.kD = 0.0001;
+        controlCfgRight.Slot0.kP = 0.09;
+        controlCfgRight.Slot0.kI = 0;
+        controlCfgRight.Slot0.kD = 0.001;
         controlCfgRight.Slot0.kV = 0.12; // ~12V
 
         left.getConfigurator().apply(controlCfg);
         center.getConfigurator().apply(controlCfg);
         right.getConfigurator().apply(controlCfgRight);
+    }
+
+    public void setSelected(Side side) {
+        selectedSide = side;
     }
 
     private void setTargetRpmCenter(double rpm) {
@@ -122,28 +131,24 @@ public class ShooterSubsystem extends SubsystemBase {
         return targetRpmRight;
     }
 
-    public void increaseTargetRpmRight(double deltaRpm) {
-        setTargetRpmRight(targetRpmRight + deltaRpm);
+    public void increaseSelectedTarget(double deltaRpm) {
+        if (selectedSide == Side.LEFT) {
+            setTargetRpmLeft(targetRpmLeft + deltaRpm);
+        } else if (selectedSide == Side.CENTER) {
+            setTargetRpmCenter(targetRpmCenter + deltaRpm);
+        } else {
+            setTargetRpmRight(targetRpmRight + deltaRpm);
+        }
     }
 
-    public void decreaseTargetRpmRight(double deltaRpm) {
-        setTargetRpmRight(targetRpmRight - deltaRpm);
-    }
-
-    public void increaseTargetRpmLeft(double deltaRpm) {
-        setTargetRpmLeft(targetRpmLeft + deltaRpm);
-    }
-
-    public void decreaseTargetRpmLeft(double deltaRpm) {
-        setTargetRpmLeft(targetRpmLeft - deltaRpm);
-    }
-
-    public void increaseTargetRpmCenter(double deltaRpm) {
-        setTargetRpmCenter(targetRpmCenter + deltaRpm);
-    }
-
-    public void decreaseTargetRpmCenter(double deltaRpm) {
-        setTargetRpmCenter(targetRpmCenter - deltaRpm);
+    public void decreaseSelectedTarget(double deltaRpm) {
+        if (selectedSide == Side.LEFT) {
+            setTargetRpmLeft(targetRpmLeft - deltaRpm);
+        } else if (selectedSide == Side.CENTER) {
+            setTargetRpmCenter(targetRpmCenter - deltaRpm);
+        } else {
+            setTargetRpmRight(targetRpmRight - deltaRpm);
+        }
     }
 
     public void increaseTargetRpm(double deltaRpm) {
@@ -158,13 +163,18 @@ public class ShooterSubsystem extends SubsystemBase {
         setTargetRpmRight(targetRpmRight - deltaRpm);
     }
 
+    public void rotateKicker() {
+        isKicking = true;
+        kicker.set(0.3);
+    }
+
     /**
      * Runs the motor at the specified RPM using closed-loop control.
      * @param rpm Target RPM
      */
     public void rotate(double rpmLeft, double rpmRight, double rpmCenter) {
+        isShooting = true;
         // Convert RPM to RPS
-        kicker.set(0.3);
         left.setControl(velocityRequest.withVelocity(rpmLeft * RPM_TO_RPS));
         center.setControl(velocityRequest.withVelocity(rpmCenter * RPM_TO_RPS));
         right.setControl(velocityRequest.withVelocity(rpmRight * RPM_TO_RPS));
@@ -174,26 +184,16 @@ public class ShooterSubsystem extends SubsystemBase {
         rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
     }
 
-    public void stop() {
+    public void stopKicker() {
+        isKicking = false;
         kicker.stopMotor();
+    }
+
+    public void stop() {
+        isShooting = false;
         left.stopMotor();
         right.stopMotor();
         center.stopMotor();
-    }
-
-    public void raise() {
-        actuator1.setSpeed(0.6);
-        actuator2.setSpeed(0.6);
-    }
-
-    public void lower() {
-        actuator1.setSpeed(-0.6);
-        actuator2.setSpeed(-0.6);
-    }
-
-    public void stopActuator() {
-        actuator1.setSpeed(0);
-        actuator2.setSpeed(0);
     }
 
     /**
@@ -228,6 +228,14 @@ public class ShooterSubsystem extends SubsystemBase {
             return true;
         }
         return false;
+    }
+
+    public boolean isShooting() {
+        return isShooting;
+    }
+
+    public boolean isKicking() {
+        return isKicking;
     }
 
     @Override
