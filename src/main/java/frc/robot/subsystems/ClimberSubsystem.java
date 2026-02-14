@@ -25,16 +25,16 @@ public class ClimberSubsystem extends SubsystemBase {
   /** Creates a new Climber. */
   public ClimberSubsystem() {
 
-    this.climberMotor = new TalonFX(1);
+    this.climberMotor = new TalonFX(41);
 
-    follower = new TalonFX(2);
+    follower = new TalonFX(42);
 
     climberMotor.setPosition(0);
     follower.setPosition(0);
     climberMotor.setNeutralMode(NeutralModeValue.Brake);
     follower.setNeutralMode(NeutralModeValue.Brake);
 
-    follower.setControl(new Follower(climberMotor.getDeviceID(), MotorAlignmentValue.Opposed));
+    follower.setControl(new Follower(climberMotor.getDeviceID(), MotorAlignmentValue.Aligned));
 
   }
   
@@ -42,8 +42,25 @@ public class ClimberSubsystem extends SubsystemBase {
    * Sets the speed of the motor to extend or retract the arm
    * @param speed
    */
-  private void setMotorSpeed(double speed) {
+  public void setMotorSpeed(double speed) {
     climberMotor.set(speed);
+  }
+
+  public Command rotateCommand(double speed) {
+    //return new InstantCommand(() -> setClimberMotorSpeed(1));
+
+    return new FunctionalCommand(
+      //init
+      () -> {setMotorSpeed(speed);},
+      //execute
+      () -> {},
+      //interrupt
+      interrupted -> {setMotorSpeed(0);},
+      //isFinished
+      () -> false,
+      //requirements
+      this
+    );
 
   }
 
@@ -88,6 +105,10 @@ public class ClimberSubsystem extends SubsystemBase {
       this
     );
 
+  }
+
+  public double getRotations() {
+    return climberMotor.getPosition().getValueAsDouble();
   }
 
   /**
