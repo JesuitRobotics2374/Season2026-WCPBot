@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.4562444444444447,
-        "y": 1.0629444444444436
+        "x": 3.397777777777778,
+        "y": 7.153222222222222
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.201144444444445,
-        "y": 1.8424999999999987
+        "x": 2.530522222222223,
+        "y": 5.750022222222222
       },
       "isLocked": false,
-      "linkedName": "RightStartBlue"
+      "linkedName": "LeftStartBlue"
     },
     {
       "anchor": {
-        "x": 2.355122222222222,
-        "y": 4.034999999999999
+        "x": 2.355,
+        "y": 4.035
       },
       "prevControl": {
-        "x": 2.0433000000000003,
-        "y": 4.015511111111111
+        "x": 2.424397617955902,
+        "y": 4.71514614947732
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,13 +33,13 @@
   "pointTowardsZones": [
     {
       "fieldPosition": {
-        "x": 4.625,
-        "y": 4.025
+        "x": 4.625594,
+        "y": 4.034536
       },
       "rotationOffset": 0.0,
       "minWaypointRelativePos": 0.25,
       "maxWaypointRelativePos": 0.75,
-      "name": "BlueHub"
+      "name": "Hub"
     }
   ],
   "eventMarkers": [],
@@ -59,7 +59,7 @@
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 90.0
+    "rotation": 0.0
   },
   "useDefaultConstraints": true
 }

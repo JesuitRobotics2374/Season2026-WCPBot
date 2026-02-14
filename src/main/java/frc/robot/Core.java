@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -54,6 +55,9 @@ public class Core {
     public Core() {
         configureBindings();
         configureShuffleBoard();
+
+        NamedCommands.registerCommand("shoot", m_shooter.autoShoot());
+        NamedCommands.registerCommand("intake", m_intake.intake());
     }
 
     public void configureShuffleBoard() {

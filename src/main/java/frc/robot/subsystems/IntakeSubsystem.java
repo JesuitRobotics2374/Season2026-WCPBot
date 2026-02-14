@@ -75,7 +75,7 @@ public class IntakeSubsystem extends SubsystemBase {
   //       this);
   // }
 
-  public void intake() {
+  public Command intake() {
     if (isIntaking) {
       isIntaking = false;
       intakeMotor.stopMotor();;
