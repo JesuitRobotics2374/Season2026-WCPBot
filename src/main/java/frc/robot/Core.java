@@ -47,8 +47,8 @@ public class Core {
     public final DriveSubsystem drivetrain = TunerConstants.createDrivetrain();
 
     private final IntakeSubsystem m_intake = new IntakeSubsystem();
-    private final ShooterSubsystem m_shooter = new ShooterSubsystem();
     private final HopperSubsystem m_hopper = new HopperSubsystem();
+    private final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
 
     private final SendableChooser<Command> autoChooser;
 
