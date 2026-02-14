@@ -18,8 +18,6 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean raised;
   private boolean lowered;
 
-  private boolean isIntaking;
-
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     intakeMotor = new TalonFX(37);
@@ -75,19 +73,11 @@ public class IntakeSubsystem extends SubsystemBase {
   //       this);
   // }
 
-  public void intake() {
-    if (isIntaking) {
-      isIntaking = false;
-      intakeMotor.stopMotor();;
-    }
-    else {
-      isIntaking = true;
-      intakeMotor.set(-0.7);
-    }
+  public Command intake() {
+    return new InstantCommand(() -> intakeMotor.set(-0.7), this);
   }
 
   public Command stop() {
-    isIntaking = false;
     return new InstantCommand(() -> intakeMotor.set(0), this);
   }
 
@@ -98,10 +88,6 @@ public class IntakeSubsystem extends SubsystemBase {
   public double getIntakeSupplyCurrent() {
     return intakeMotor.getSupplyCurrent().getValueAsDouble() +
            pivotMotor.getSupplyCurrent().getValueAsDouble();
-  }
-
-  public boolean isIntaking() {
-    return isIntaking;
   }
 
   @Override

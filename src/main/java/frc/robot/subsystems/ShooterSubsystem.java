@@ -8,9 +8,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -20,16 +17,16 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX right;
     private final TalonFX kicker;
 
-    private HopperSubsystem m_hopper;
+    private final LinearActuator actuator1;
+    private final LinearActuator actuator2;
     
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
     private double targetRpm = 0.0;
-    private double targetRpmCenter = 3500;
-    private double targetRpmLeft = 3000;
-    private double targetRpmRight = 3000;
-    private double targetRpmKicker = 100;
+    private double targetRpmCenter = 0.0;
+    private double targetRpmLeft = 0.0;
+    private double targetRpmRight = 0.0;
     
     // Constants
     private static final double MAX_RPM = 6000.0; 
@@ -37,21 +34,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private static final double RPM_TO_RPS = 1.0 / 60.0;
     private static final double CURRENT_LIMIT = 40.0; // Amps
 
-    public enum Side {
-        LEFT,
-        CENTER,
-        RIGHT,
-        KICKER;
-    }
+    public ShooterSubsystem() {
 
-    private Side selectedSide = Side.LEFT;
-
-    private boolean isShooting = false;
-    private boolean isKicking = false;
-
-    public ShooterSubsystem(HopperSubsystem m_hopper) {
-
-        this.m_hopper = m_hopper;
+        actuator1 = new LinearActuator(0, 100, 2);
+        actuator2 = new LinearActuator(2, 100, 2);
 
         left = new TalonFX(31);
         center = new TalonFX(32);
@@ -67,9 +53,9 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfg.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
 
-        controlCfg.Slot0.kP = 0.09;
-        controlCfg.Slot0.kI = 0;
-        controlCfg.Slot0.kD = 0.001;
+        controlCfg.Slot0.kP = 0.11;
+        controlCfg.Slot0.kI = 0.5;
+        controlCfg.Slot0.kD = 0.0001;
         controlCfg.Slot0.kV = 0.12; // ~12V
 
         TalonFXConfiguration controlCfgRight = new TalonFXConfiguration();
@@ -80,48 +66,14 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfgRight.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfgRight.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
 
-        controlCfgRight.Slot0.kP = 0.09;
-        controlCfgRight.Slot0.kI = 0;
-        controlCfgRight.Slot0.kD = 0.001;
+        controlCfgRight.Slot0.kP = 0.11;
+        controlCfgRight.Slot0.kI = 0.5;
+        controlCfgRight.Slot0.kD = 0.0001;
         controlCfgRight.Slot0.kV = 0.12; // ~12V
 
         left.getConfigurator().apply(controlCfg);
         center.getConfigurator().apply(controlCfg);
         right.getConfigurator().apply(controlCfgRight);
-        kicker.getConfigurator().apply(controlCfg);
-    }
-
-    public Command autoShoot() {
-        return new FunctionalCommand(
-            () -> {
-                rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
-                isShooting = true;
-            },
-            () -> {
-                boolean leftReady = Math.abs(left.getRotorVelocity().getValueAsDouble() - targetRpmLeft) <= 100;
-                boolean rightReady = Math.abs(right.getRotorVelocity().getValueAsDouble() - targetRpmRight) <= 100;
-                boolean centerReady = Math.abs(center.getRotorVelocity().getValueAsDouble() - targetRpmCenter) <= 100;
-
-                if (leftReady && rightReady && centerReady) {
-                    kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
-                    isKicking = true;
-                    m_hopper.startRoll();
-                }
-            },
-            interrupted -> {
-                isShooting = false;
-                isKicking = false;
-                stop();
-                stopKicker();
-                m_hopper.stop();
-            },
-            () -> false,
-            this
-        );
-    }
-
-    public void setSelected(Side side) {
-        selectedSide = side;
     }
 
     private void setTargetRpmCenter(double rpm) {
@@ -140,12 +92,6 @@ public class ShooterSubsystem extends SubsystemBase {
         if (rpm > MAX_RPM) rpm = MAX_RPM;
         if (rpm < -MAX_RPM) rpm = -MAX_RPM;
         targetRpmRight = rpm;
-    }
-
-    private void setTargetRpmKicker(double rpm) {
-        if (rpm > MAX_RPM) rpm = MAX_RPM;
-        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
-        targetRpmKicker = rpm;
     }
 
     /**
@@ -176,32 +122,28 @@ public class ShooterSubsystem extends SubsystemBase {
         return targetRpmRight;
     }
 
-    public double getTargetRpmKicker() {
-        return targetRpmKicker;
+    public void increaseTargetRpmRight(double deltaRpm) {
+        setTargetRpmRight(targetRpmRight + deltaRpm);
     }
 
-    public void increaseSelectedTarget(double deltaRpm) {
-        if (selectedSide == Side.LEFT) {
-            setTargetRpmLeft(targetRpmLeft + deltaRpm);
-        } else if (selectedSide == Side.CENTER) {
-            setTargetRpmCenter(targetRpmCenter + deltaRpm);
-        } else if (selectedSide == Side.RIGHT) {
-            setTargetRpmRight(targetRpmRight + deltaRpm);
-        } else {
-            setTargetRpmKicker(targetRpmKicker + deltaRpm);
-        }
+    public void decreaseTargetRpmRight(double deltaRpm) {
+        setTargetRpmRight(targetRpmRight - deltaRpm);
     }
 
-    public void decreaseSelectedTarget(double deltaRpm) {
-        if (selectedSide == Side.LEFT) {
-            setTargetRpmLeft(targetRpmLeft - deltaRpm);
-        } else if (selectedSide == Side.CENTER) {
-            setTargetRpmCenter(targetRpmCenter - deltaRpm);
-        } else if (selectedSide == Side.RIGHT) {
-            setTargetRpmRight(targetRpmRight - deltaRpm);
-        } else {
-            setTargetRpmKicker(targetRpmKicker - deltaRpm);
-        }
+    public void increaseTargetRpmLeft(double deltaRpm) {
+        setTargetRpmLeft(targetRpmLeft + deltaRpm);
+    }
+
+    public void decreaseTargetRpmLeft(double deltaRpm) {
+        setTargetRpmLeft(targetRpmLeft - deltaRpm);
+    }
+
+    public void increaseTargetRpmCenter(double deltaRpm) {
+        setTargetRpmCenter(targetRpmCenter + deltaRpm);
+    }
+
+    public void decreaseTargetRpmCenter(double deltaRpm) {
+        setTargetRpmCenter(targetRpmCenter - deltaRpm);
     }
 
     public void increaseTargetRpm(double deltaRpm) {
@@ -216,48 +158,42 @@ public class ShooterSubsystem extends SubsystemBase {
         setTargetRpmRight(targetRpmRight - deltaRpm);
     }
 
-    public void rotateKicker() {
-        if (isKicking) {
-            kicker.stopMotor();
-            isKicking = false;
-        }
-        else {
-            kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
-            isKicking = true;
-        }
-    }
-
     /**
      * Runs the motor at the specified RPM using closed-loop control.
      * @param rpm Target RPM
      */
     public void rotate(double rpmLeft, double rpmRight, double rpmCenter) {
-        isShooting = true;
         // Convert RPM to RPS
+        kicker.set(0.3);
         left.setControl(velocityRequest.withVelocity(rpmLeft * RPM_TO_RPS));
         center.setControl(velocityRequest.withVelocity(rpmCenter * RPM_TO_RPS));
         right.setControl(velocityRequest.withVelocity(rpmRight * RPM_TO_RPS));
     }
 
     public void rotateAtCached() {
-        if (isShooting) {
-            stop();
-        }
-        else {
-            rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
-        }
-    }
-
-    public void stopKicker() {
-        isKicking = false;
-        kicker.stopMotor();
+        rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
     }
 
     public void stop() {
-        isShooting = false;
+        kicker.stopMotor();
         left.stopMotor();
         right.stopMotor();
         center.stopMotor();
+    }
+
+    public void raise() {
+        actuator1.setSpeed(0.6);
+        actuator2.setSpeed(0.6);
+    }
+
+    public void lower() {
+        actuator1.setSpeed(-0.6);
+        actuator2.setSpeed(-0.6);
+    }
+
+    public void stopActuator() {
+        actuator1.setDisabled();
+        actuator2.setDisabled();
     }
 
     /**
@@ -281,13 +217,6 @@ public class ShooterSubsystem extends SubsystemBase {
         return right.getRotorVelocity().getValueAsDouble() * 60.0;
     }
 
-    /**
-     * @return Current velocity in RPM
-     */
-    public double getSpeedRpmKicker() {
-        return kicker.getRotorVelocity().getValueAsDouble() * 60.0;
-    }
-
     public double getShooterSupplyCurrent() {
         return right.getSupplyCurrent().getValueAsDouble() +
                left.getSupplyCurrent().getValueAsDouble() +
@@ -299,14 +228,6 @@ public class ShooterSubsystem extends SubsystemBase {
             return true;
         }
         return false;
-    }
-
-    public boolean isShooting() {
-        return isShooting;
-    }
-
-    public boolean isKicking() {
-        return isKicking;
     }
 
     @Override
