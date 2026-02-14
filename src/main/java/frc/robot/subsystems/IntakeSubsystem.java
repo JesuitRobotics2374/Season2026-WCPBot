@@ -75,9 +75,15 @@ public class IntakeSubsystem extends SubsystemBase {
   //       this);
   // }
 
-  public Command intake() {
-    isIntaking = true;
-    return new InstantCommand(() -> intakeMotor.set(-0.7), this);
+  public void intake() {
+    if (isIntaking) {
+      isIntaking = false;
+      intakeMotor.stopMotor();;
+    }
+    else {
+      isIntaking = true;
+      intakeMotor.set(-0.7);
+    }
   }
 
   public Command stop() {

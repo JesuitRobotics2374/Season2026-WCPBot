@@ -24,6 +24,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private double targetRpmCenter = 3500;
     private double targetRpmLeft = 3000;
     private double targetRpmRight = 3000;
+    private double targetRpmKicker = 100;
     
     // Constants
     private static final double MAX_RPM = 6000.0; 
@@ -34,7 +35,8 @@ public class ShooterSubsystem extends SubsystemBase {
     public enum Side {
         LEFT,
         CENTER,
-        RIGHT;
+        RIGHT,
+        KICKER;
     }
 
     private Side selectedSide = Side.LEFT;
@@ -79,6 +81,7 @@ public class ShooterSubsystem extends SubsystemBase {
         left.getConfigurator().apply(controlCfg);
         center.getConfigurator().apply(controlCfg);
         right.getConfigurator().apply(controlCfgRight);
+        kicker.getConfigurator().apply(controlCfg);
     }
 
     public void setSelected(Side side) {
@@ -101,6 +104,12 @@ public class ShooterSubsystem extends SubsystemBase {
         if (rpm > MAX_RPM) rpm = MAX_RPM;
         if (rpm < -MAX_RPM) rpm = -MAX_RPM;
         targetRpmRight = rpm;
+    }
+
+    private void setTargetRpmKicker(double rpm) {
+        if (rpm > MAX_RPM) rpm = MAX_RPM;
+        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
+        targetRpmKicker = rpm;
     }
 
     /**
@@ -131,13 +140,19 @@ public class ShooterSubsystem extends SubsystemBase {
         return targetRpmRight;
     }
 
+    public double getTargetRpmKicker() {
+        return targetRpmKicker;
+    }
+
     public void increaseSelectedTarget(double deltaRpm) {
         if (selectedSide == Side.LEFT) {
             setTargetRpmLeft(targetRpmLeft + deltaRpm);
         } else if (selectedSide == Side.CENTER) {
             setTargetRpmCenter(targetRpmCenter + deltaRpm);
-        } else {
+        } else if (selectedSide == Side.RIGHT) {
             setTargetRpmRight(targetRpmRight + deltaRpm);
+        } else {
+            setTargetRpmKicker(targetRpmKicker + deltaRpm);
         }
     }
 
@@ -146,8 +161,10 @@ public class ShooterSubsystem extends SubsystemBase {
             setTargetRpmLeft(targetRpmLeft - deltaRpm);
         } else if (selectedSide == Side.CENTER) {
             setTargetRpmCenter(targetRpmCenter - deltaRpm);
-        } else {
+        } else if (selectedSide == Side.RIGHT) {
             setTargetRpmRight(targetRpmRight - deltaRpm);
+        } else {
+            setTargetRpmKicker(targetRpmKicker - deltaRpm);
         }
     }
 
@@ -164,8 +181,14 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void rotateKicker() {
-        isKicking = true;
-        kicker.set(0.3);
+        if (isKicking) {
+            kicker.stopMotor();
+            isKicking = false;
+        }
+        else {
+            kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
+            isKicking = true;
+        }
     }
 
     /**
@@ -181,7 +204,12 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void rotateAtCached() {
-        rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
+        if (isShooting) {
+            stop();
+        }
+        else {
+            rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
+        }
     }
 
     public void stopKicker() {
@@ -215,6 +243,13 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public double getSpeedRpmRight() {
         return right.getRotorVelocity().getValueAsDouble() * 60.0;
+    }
+
+    /**
+     * @return Current velocity in RPM
+     */
+    public double getSpeedRpmKicker() {
+        return kicker.getRotorVelocity().getValueAsDouble() * 60.0;
     }
 
     public double getShooterSupplyCurrent() {

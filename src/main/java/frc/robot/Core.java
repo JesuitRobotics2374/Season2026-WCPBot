@@ -28,8 +28,8 @@ import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.Side;
 
 public class Core {
-    private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = 0.3 * RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxSpeed = 0.4 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double MaxAngularRate = 0.65 * RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -69,6 +69,9 @@ public class Core {
         tab.addDouble("Speed Left", () -> m_shooter.getSpeedRpmLeft()).withPosition(2, 1).withSize(5, 3);
         tab.addDouble("Target Speed Left", () -> m_shooter.getTargetRpmLeft()).withPosition(7, 1).withSize(2, 1);
 
+        tab.addDouble("Speed Kicker", () -> m_shooter.getSpeedRpmKicker()).withPosition(2, 1).withSize(5, 3);
+        tab.addDouble("Target Speed Kicker", () -> m_shooter.getTargetRpmKicker()).withPosition(7, 1).withSize(2, 1);
+
         tab.addDouble("Climber Rotations", () -> m_climber.getRotations());
 
         tab.addBoolean("Shooting", () -> m_shooter.isShooting());
@@ -78,6 +81,7 @@ public class Core {
     }
 
     private void configureBindings() {
+
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
@@ -130,14 +134,15 @@ public class Core {
         operatorController.povRight().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.RIGHT)));
         operatorController.povUp().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.CENTER)));
         operatorController.povLeft().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.LEFT)));
+        operatorController.povDown().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.KICKER)));
 
-        operatorController.y().toggleOnTrue(new InstantCommand(() -> m_shooter.rotateAtCached())).toggleOnFalse(new InstantCommand(() -> m_shooter.stop()));
+        operatorController.y().onTrue(new InstantCommand(() -> m_shooter.rotateAtCached()));
 
-        operatorController.x().toggleOnTrue(new InstantCommand(() -> m_shooter.rotateKicker())).toggleOnFalse(new InstantCommand(() -> m_shooter.stopKicker()));
+        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotateKicker()));
 
         // INTAKE
 
-        operatorController.a().toggleOnTrue(m_intake.intake()).toggleOnFalse(m_intake.stop());
+        operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));
 
         driveController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
         driveController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
@@ -151,7 +156,7 @@ public class Core {
 
         // HOPPER
 
-        operatorController.b().toggleOnTrue(m_hopper.roll()).toggleOnTrue(m_hopper.stop());
+        operatorController.b().onTrue(new InstantCommand(() -> m_hopper.roll()));
 
     }
 
