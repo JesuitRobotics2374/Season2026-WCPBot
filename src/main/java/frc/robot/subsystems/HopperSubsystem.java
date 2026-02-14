@@ -42,6 +42,11 @@ public class HopperSubsystem extends SubsystemBase {
     }
   }
 
+  public void startRoll() {
+    rolling = true;
+      rollerMotor.set(0.5);
+  }
+
   public Command purge() {
     rolling = false;
     pulsing = false;

@@ -8,6 +8,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -16,6 +19,8 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX center;
     private final TalonFX right;
     private final TalonFX kicker;
+
+    private HopperSubsystem m_hopper;
     
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
@@ -44,7 +49,9 @@ public class ShooterSubsystem extends SubsystemBase {
     private boolean isShooting = false;
     private boolean isKicking = false;
 
-    public ShooterSubsystem() {
+    public ShooterSubsystem(HopperSubsystem m_hopper) {
+
+        this.m_hopper = m_hopper;
 
         left = new TalonFX(31);
         center = new TalonFX(32);
@@ -82,6 +89,35 @@ public class ShooterSubsystem extends SubsystemBase {
         center.getConfigurator().apply(controlCfg);
         right.getConfigurator().apply(controlCfgRight);
         kicker.getConfigurator().apply(controlCfg);
+    }
+
+    public Command autoShoot() {
+        return new FunctionalCommand(
+            () -> {
+                rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
+                isShooting = true;
+            },
+            () -> {
+                boolean leftReady = Math.abs(left.getRotorVelocity().getValueAsDouble() - targetRpmLeft) <= 100;
+                boolean rightReady = Math.abs(right.getRotorVelocity().getValueAsDouble() - targetRpmRight) <= 100;
+                boolean centerReady = Math.abs(center.getRotorVelocity().getValueAsDouble() - targetRpmCenter) <= 100;
+
+                if (leftReady && rightReady && centerReady) {
+                    kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
+                    isKicking = true;
+                    m_hopper.startRoll();
+                }
+            },
+            interrupted -> {
+                isShooting = false;
+                isKicking = false;
+                stop();
+                stopKicker();
+                m_hopper.stop();
+            },
+            () -> false,
+            this
+        );
     }
 
     public void setSelected(Side side) {
