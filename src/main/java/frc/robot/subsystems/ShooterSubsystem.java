@@ -11,6 +11,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ShooterSubsystem extends SubsystemBase {
@@ -26,10 +27,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
     private double targetRpm = 0.0;
-    private double targetRpmCenter = 3500;
-    private double targetRpmLeft = 3000;
-    private double targetRpmRight = 3000;
-    private double targetRpmKicker = 100;
+    private double targetRpmCenter = 3800;
+    private double targetRpmLeft = 3500;
+    private double targetRpmRight = 3500;
+    private double targetRpmKicker = 1100;
     
     // Constants
     private static final double MAX_RPM = 6000.0; 
@@ -90,34 +91,49 @@ public class ShooterSubsystem extends SubsystemBase {
         right.getConfigurator().apply(controlCfgRight);
         kicker.getConfigurator().apply(controlCfg);
     }
+    
+    public boolean isVelocityWithinTolerance() {
+        boolean leftReady = Math.abs(left.getRotorVelocity().getValueAsDouble() - targetRpmLeft) <= 100;
+        boolean rightReady = Math.abs(right.getRotorVelocity().getValueAsDouble() - targetRpmRight) <= 100;
+        boolean centerReady = Math.abs(center.getRotorVelocity().getValueAsDouble() - targetRpmCenter) <= 100;
+
+        return (leftReady && rightReady && centerReady);
+    }
+
+    private void stopAll() {
+        kicker.stopMotor();
+        center.stopMotor();
+        left.stopMotor();
+        right.stopMotor();
+        m_hopper.stop2();
+    }
+
+    private boolean autoShooting = false;
 
     public Command autoShoot() {
-        return new FunctionalCommand(
-            () -> {
-                rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
-                isShooting = true;
-            },
-            () -> {
-                boolean leftReady = Math.abs(left.getRotorVelocity().getValueAsDouble() - targetRpmLeft) <= 100;
-                boolean rightReady = Math.abs(right.getRotorVelocity().getValueAsDouble() - targetRpmRight) <= 100;
-                boolean centerReady = Math.abs(center.getRotorVelocity().getValueAsDouble() - targetRpmCenter) <= 100;
-
-                if (leftReady && rightReady && centerReady) {
-                    kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
-                    isKicking = true;
-                    m_hopper.startRoll();
-                }
-            },
-            interrupted -> {
-                isShooting = false;
-                isKicking = false;
-                stop();
-                stopKicker();
-                m_hopper.stop();
-            },
-            () -> false,
-            this
-        );
+        if (autoShooting) {
+            autoShooting = false;
+            return new InstantCommand(() -> stopAll());
+        }
+        else {
+            autoShooting = true;
+            return new FunctionalCommand(
+                () -> {
+                    rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
+                },
+                () -> {
+                  if (isVelocityWithinTolerance()) {
+                       kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
+                       m_hopper.startRoll();
+                   }
+               },
+               interrupted -> {
+                  stopAll();
+               },
+               () -> false,
+               this
+          );
+        }
     }
 
     public void setSelected(Side side) {
@@ -232,7 +248,6 @@ public class ShooterSubsystem extends SubsystemBase {
      * @param rpm Target RPM
      */
     public void rotate(double rpmLeft, double rpmRight, double rpmCenter) {
-        isShooting = true;
         // Convert RPM to RPS
         left.setControl(velocityRequest.withVelocity(rpmLeft * RPM_TO_RPS));
         center.setControl(velocityRequest.withVelocity(rpmCenter * RPM_TO_RPS));
@@ -241,20 +256,20 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public void rotateAtCached() {
         if (isShooting) {
+            isShooting = false;
             stop();
         }
         else {
+            isShooting = true;
             rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
         }
     }
 
     public void stopKicker() {
-        isKicking = false;
         kicker.stopMotor();
     }
 
     public void stop() {
-        isShooting = false;
         left.stopMotor();
         right.stopMotor();
         center.stopMotor();

@@ -140,6 +140,8 @@ public class Core {
 
         operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotateKicker()));
 
+        operatorController.back().onTrue(m_shooter.autoShoot());
+
         // INTAKE
 
         operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));

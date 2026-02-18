@@ -59,6 +59,10 @@ public class HopperSubsystem extends SubsystemBase {
     return new InstantCommand(() -> rollerMotor.stopMotor());
   }
 
+  public void stop2() {
+    rollerMotor.stopMotor();
+  }
+
   public Command pulse() {
     Timer timer = new Timer();
 
