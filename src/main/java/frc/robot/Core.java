@@ -74,6 +74,8 @@ public class Core {
 
         tab.addDouble("Climber Rotations", () -> m_climber.getRotations());
 
+        tab.addBoolean("Auto Shooting", () -> m_shooter.getIsAutoShooting());
+
         tab.addBoolean("Shooting", () -> m_shooter.isShooting());
         tab.addBoolean("Kicking", () -> m_shooter.isKicking());
         tab.addBoolean("Rolling", () -> m_hopper.isRolling());
@@ -92,19 +94,6 @@ public class Core {
                         .withRotationalRate(-driveController.getRightX() * MaxAngularRate * getGlobalSlowMode()) // Drive counterclockwise
                                                                                            // with negative X (left)
                 ));
-
-        m_hood.setDefaultCommand(
-                Commands.run(() -> {
-                    double speed = operatorController.getRightY();
-                    if (speed > 0.1) { // Added a small deadband
-                        m_hood.setPosition(1);
-                    } else if (speed < -0.1) {
-                        m_hood.setPosition(0);
-                    } 
-                    else {
-                        m_hood.setPosition(m_hood.getPosition());
-                    }
-                }, m_hood));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
@@ -128,19 +117,22 @@ public class Core {
         operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
         operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
-        operatorController.rightTrigger().onTrue(new InstantCommand(() -> m_shooter.increaseSelectedTarget(100)));
-        operatorController.leftTrigger().onTrue(new InstantCommand(() -> m_shooter.decreaseSelectedTarget(100)));
+        // operatorController.rightTrigger().onTrue(new InstantCommand(() -> m_shooter.increaseSelectedTarget(100)));
+        // operatorController.leftTrigger().onTrue(new InstantCommand(() -> m_shooter.decreaseSelectedTarget(100)));
 
-        operatorController.povRight().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.RIGHT)));
-        operatorController.povUp().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.CENTER)));
-        operatorController.povLeft().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.LEFT)));
-        operatorController.povDown().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.KICKER)));
+        // operatorController.povRight().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.RIGHT)));
+        // operatorController.povUp().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.CENTER)));
+        // operatorController.povLeft().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.LEFT)));
+        // operatorController.povDown().onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.KICKER)));
 
-        operatorController.y().onTrue(new InstantCommand(() -> m_shooter.rotateAtCached()));
+        // operatorController.y().onTrue(new InstantCommand(() -> m_shooter.rotateAtCached()));
 
-        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotateKicker()));
+        // operatorController.x().onTrue(new InstantCommand(() -> m_shooter.rotateKicker()));
 
-        operatorController.back().onTrue(m_shooter.autoShoot());
+        operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        
+        operatorController.rightTrigger().onTrue(m_hood.changePosition(0.1));
+        operatorController.leftTrigger().onTrue(m_hood.changePosition(-0.1));
 
         // INTAKE
 
@@ -158,7 +150,7 @@ public class Core {
 
         // HOPPER
 
-        operatorController.b().onTrue(new InstantCommand(() -> m_hopper.roll()));
+        //operatorController.b().onTrue(new InstantCommand(() -> m_hopper.roll()));
 
     }
 

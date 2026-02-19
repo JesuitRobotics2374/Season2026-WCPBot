@@ -10,6 +10,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -22,18 +23,18 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX kicker;
 
     private HopperSubsystem m_hopper;
-    
+
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
     private double targetRpm = 0.0;
-    private double targetRpmCenter = 3800;
+    private double targetRpmCenter = 4100;
     private double targetRpmLeft = 3500;
     private double targetRpmRight = 3500;
     private double targetRpmKicker = 1100;
-    
+
     // Constants
-    private static final double MAX_RPM = 6000.0; 
+    private static final double MAX_RPM = 6000.0;
     private static final double MIN_RPM = 5;
     private static final double RPM_TO_RPS = 1.0 / 60.0;
     private static final double CURRENT_LIMIT = 40.0; // Amps
@@ -63,7 +64,7 @@ public class ShooterSubsystem extends SubsystemBase {
         TalonFXConfiguration controlCfg = new TalonFXConfiguration();
         controlCfg.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         controlCfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
-        
+
         // Current Limits
         controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfg.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
@@ -76,7 +77,7 @@ public class ShooterSubsystem extends SubsystemBase {
         TalonFXConfiguration controlCfgRight = new TalonFXConfiguration();
         controlCfgRight.MotorOutput.NeutralMode = NeutralModeValue.Coast;
         controlCfgRight.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-        
+
         // Current Limits
         controlCfgRight.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfgRight.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
@@ -91,11 +92,11 @@ public class ShooterSubsystem extends SubsystemBase {
         right.getConfigurator().apply(controlCfgRight);
         kicker.getConfigurator().apply(controlCfg);
     }
-    
+
     public boolean isVelocityWithinTolerance() {
-        boolean leftReady = Math.abs(left.getRotorVelocity().getValueAsDouble() - targetRpmLeft) <= 100;
-        boolean rightReady = Math.abs(right.getRotorVelocity().getValueAsDouble() - targetRpmRight) <= 100;
-        boolean centerReady = Math.abs(center.getRotorVelocity().getValueAsDouble() - targetRpmCenter) <= 100;
+        boolean leftReady = Math.abs(getTargetRpmLeft() - getSpeedRpmLeft()) <= 100;
+        boolean rightReady = Math.abs(getTargetRpmRight() - getSpeedRpmRight()) <= 100;
+        boolean centerReady = Math.abs(getTargetRpmCenter() - getSpeedRpmCenter()) <= 100;
 
         return (leftReady && rightReady && centerReady);
     }
@@ -109,30 +110,34 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private boolean autoShooting = false;
+    private Command existingAutoShootCommand = new FunctionalCommand(
+            () -> {
+                rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
+            },
+            () -> {
+                if (isVelocityWithinTolerance()) {
+                    setKickerControl();
+                    m_hopper.startRoll();
+                }
+            },
+            interrupted -> {
+                stopAll();
+            },
+            () -> false,
+            this);
 
-    public Command autoShoot() {
+    public boolean getIsAutoShooting() {
+        return autoShooting;
+    }
+
+    public void autoShoot() {
+        System.out.println("AUTOSHOOTING: " + autoShooting);
         if (autoShooting) {
             autoShooting = false;
-            return new InstantCommand(() -> stopAll());
-        }
-        else {
+            existingAutoShootCommand.cancel();
+        } else {
             autoShooting = true;
-            return new FunctionalCommand(
-                () -> {
-                    rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
-                },
-                () -> {
-                  if (isVelocityWithinTolerance()) {
-                       kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
-                       m_hopper.startRoll();
-                   }
-               },
-               interrupted -> {
-                  stopAll();
-               },
-               () -> false,
-               this
-          );
+            CommandScheduler.getInstance().schedule(existingAutoShootCommand);
         }
     }
 
@@ -141,36 +146,47 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private void setTargetRpmCenter(double rpm) {
-        if (rpm > MAX_RPM) rpm = MAX_RPM;
-        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
+        if (rpm > MAX_RPM)
+            rpm = MAX_RPM;
+        if (rpm < -MAX_RPM)
+            rpm = -MAX_RPM;
         targetRpmCenter = rpm;
     }
 
     private void setTargetRpmLeft(double rpm) {
-        if (rpm > MAX_RPM) rpm = MAX_RPM;
-        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
+        if (rpm > MAX_RPM)
+            rpm = MAX_RPM;
+        if (rpm < -MAX_RPM)
+            rpm = -MAX_RPM;
         targetRpmLeft = rpm;
     }
 
     private void setTargetRpmRight(double rpm) {
-        if (rpm > MAX_RPM) rpm = MAX_RPM;
-        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
+        if (rpm > MAX_RPM)
+            rpm = MAX_RPM;
+        if (rpm < -MAX_RPM)
+            rpm = -MAX_RPM;
         targetRpmRight = rpm;
     }
 
     private void setTargetRpmKicker(double rpm) {
-        if (rpm > MAX_RPM) rpm = MAX_RPM;
-        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
+        if (rpm > MAX_RPM)
+            rpm = MAX_RPM;
+        if (rpm < -MAX_RPM)
+            rpm = -MAX_RPM;
         targetRpmKicker = rpm;
     }
 
     /**
      * sets targetrpm for all three motors
+     * 
      * @param rpm
      */
     private void setTargetRpm(double rpm) {
-        if (rpm > MAX_RPM) rpm = MAX_RPM;
-        if (rpm < -MAX_RPM) rpm = -MAX_RPM;
+        if (rpm > MAX_RPM)
+            rpm = MAX_RPM;
+        if (rpm < -MAX_RPM)
+            rpm = -MAX_RPM;
         targetRpmRight = rpm;
         targetRpmLeft = rpm;
         targetRpmCenter = rpm;
@@ -232,19 +248,23 @@ public class ShooterSubsystem extends SubsystemBase {
         setTargetRpmRight(targetRpmRight - deltaRpm);
     }
 
+    public void setKickerControl() {
+        kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
+    }
+
     public void rotateKicker() {
         if (isKicking) {
             kicker.stopMotor();
             isKicking = false;
-        }
-        else {
-            kicker.setControl(velocityRequest.withVelocity(targetRpmKicker * RPM_TO_RPS));
+        } else {
+            setKickerControl();
             isKicking = true;
         }
     }
 
     /**
      * Runs the motor at the specified RPM using closed-loop control.
+     * 
      * @param rpm Target RPM
      */
     public void rotate(double rpmLeft, double rpmRight, double rpmCenter) {
@@ -258,8 +278,7 @@ public class ShooterSubsystem extends SubsystemBase {
         if (isShooting) {
             isShooting = false;
             stop();
-        }
-        else {
+        } else {
             isShooting = true;
             rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
         }
@@ -282,14 +301,14 @@ public class ShooterSubsystem extends SubsystemBase {
         return center.getRotorVelocity().getValueAsDouble() * 60.0;
     }
 
-     /**
+    /**
      * @return Current velocity in RPM
      */
     public double getSpeedRpmLeft() {
         return left.getRotorVelocity().getValueAsDouble() * 60.0;
     }
 
-     /**
+    /**
      * @return Current velocity in RPM
      */
     public double getSpeedRpmRight() {
@@ -305,8 +324,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public double getShooterSupplyCurrent() {
         return right.getSupplyCurrent().getValueAsDouble() +
-               left.getSupplyCurrent().getValueAsDouble() +
-               center.getSupplyCurrent().getValueAsDouble();
+                left.getSupplyCurrent().getValueAsDouble() +
+                center.getSupplyCurrent().getValueAsDouble();
     }
 
     public boolean isRunning(double rpm) {

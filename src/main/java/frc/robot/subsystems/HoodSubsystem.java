@@ -58,6 +58,17 @@ public class HoodSubsystem extends SubsystemBase {
             .andThen(Commands.waitUntil(this::isPositionWithinTolerance));
     }
 
+    /**
+     * changes the position in increments
+     * @param delta amount to change
+     */
+    public Command changePosition(double delta) {
+        if (currentPosition + delta < 0.0 || currentPosition + delta > 1.0) {
+            return positionCommand(currentPosition);
+        }
+        return positionCommand(currentPosition + delta);
+    }
+
     public boolean isPositionWithinTolerance() {
         return MathUtil.isNear(targetPosition, currentPosition, kPositionTolerance);
     }
