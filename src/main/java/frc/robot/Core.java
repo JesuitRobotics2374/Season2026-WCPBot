@@ -24,11 +24,12 @@ import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.PowerManagement;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ShooterSubsystem.Side;
 
 public class Core {
-    private double MaxSpeed = 0.4 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = 0.65 * RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
@@ -50,6 +51,8 @@ public class Core {
     private final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
     private final ClimberSubsystem m_climber = new ClimberSubsystem();
     private final HoodSubsystem m_hood = new HoodSubsystem();
+
+    private final PowerManagement m_powerManager = new PowerManagement(drivetrain, m_climber, m_hopper, m_intake, m_shooter);
 
     public Core() {
         configureBindings();
@@ -80,6 +83,9 @@ public class Core {
         tab.addBoolean("Kicking", () -> m_shooter.isKicking());
         tab.addBoolean("Rolling", () -> m_hopper.isRolling());
         tab.addBoolean("Intaking", () -> m_intake.isIntaking());
+
+        tab.addDouble("drive limit", () -> m_powerManager.getDriveLimit());
+        tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
     }
 
     private void configureBindings() {

@@ -328,11 +328,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 center.getSupplyCurrent().getValueAsDouble();
     }
 
-    public boolean isRunning(double rpm) {
-        if (rpm != 0) {
-            return true;
-        }
-        return false;
+    public boolean isRunning() {
+        return getShooterSupplyCurrent() > 0;
     }
 
     public boolean isShooting() {
