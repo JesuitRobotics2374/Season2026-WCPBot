@@ -28,8 +28,11 @@ public class PowerManagement extends SubsystemBase {
     this.shooter = shooter;
     this.drivetrain = drivetrain;
 
-    drivetrain.setDriveCurrentLimit(Constants.DEFAULT_DRIVE_CURRENT);
-    drivetrain.setSteerCurrentLimit(Constants.DEFAULT_STEER_CURRENT);
+    driveLimit = Constants.DEFAULT_DRIVE_CURRENT;
+    steerLimit = Constants.DEFAULT_STEER_CURRENT;
+
+    drivetrain.setDriveCurrentLimit(driveLimit, driveLimit / 0.65);
+    drivetrain.setSteerCurrentLimit(steerLimit, steerLimit / 0.65);
 
     System.out.println("Power Management Initialized");
   }
@@ -65,13 +68,13 @@ public class PowerManagement extends SubsystemBase {
 
     // Determine limits
     if (currentShooting && currentIntaking) {
-      driveLimit = 50;
-      steerLimit = 30;
+      driveLimit = 20;
+      steerLimit = 10;
     } else if (currentShooting) {
-      driveLimit = 60;
-      steerLimit = 40;
+      driveLimit = 30;
+      steerLimit = 20;
     } else if (currentIntaking) {
-      driveLimit = 80;
+      driveLimit = 50;
       steerLimit = 40;
     } else {
       driveLimit = Constants.DEFAULT_DRIVE_CURRENT;
@@ -79,8 +82,8 @@ public class PowerManagement extends SubsystemBase {
     }
 
     // Apply config ONLY when state changed
-    drivetrain.setDriveCurrentLimit(driveLimit);
-    drivetrain.setSteerCurrentLimit(steerLimit);
+    drivetrain.setDriveCurrentLimit(driveLimit, driveLimit / 0.65);
+    drivetrain.setSteerCurrentLimit(steerLimit, steerLimit / 0.65);
   }
 
 }

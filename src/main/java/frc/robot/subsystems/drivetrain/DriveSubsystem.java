@@ -316,8 +316,8 @@ public class DriveSubsystem extends TunerSwerveDrivetrain implements Subsystem {
      * Sets a current limit for the drive motors
      * @param current In amps to supply to each drive motor. -1 for default
      */
-    public void setDriveCurrentLimit(double current) {
-        if (current == -1) {
+    public void setDriveCurrentLimit(double supply, double stator) {
+        if (supply == -1) {
             return;
         }
 
@@ -329,17 +329,14 @@ public class DriveSubsystem extends TunerSwerveDrivetrain implements Subsystem {
             this.getModule(i).getDriveMotor().getConfigurator().refresh(currentConfigs);
 
             // 2. Modify only the specific fields you need
-            currentConfigs.SupplyCurrentLimit = current;
+            currentConfigs.SupplyCurrentLimit = supply;
             currentConfigs.SupplyCurrentLimitEnable = true;
+            currentConfigs.StatorCurrentLimit = stator;
+            currentConfigs.StatorCurrentLimitEnable = true;
 
             // 3. Apply the updated object back to the motor
             this.getModule(i).getDriveMotor().getConfigurator().apply(currentConfigs);
 
-        }
-
-        for (int i = 0; i < 4; i++) {
-            // Access each module's drive motor and get its stator current
-            this.getModule(i).getDriveMotor().getConfigurator().apply(currentConfigs);
         }
     }
 
@@ -347,8 +344,8 @@ public class DriveSubsystem extends TunerSwerveDrivetrain implements Subsystem {
      * Sets a current limit for the steer motors
      * @param current In amps to supply to each steer motor. -1 for default
      */
-    public void setSteerCurrentLimit(double current) {
-        if (current == -1) {
+    public void setSteerCurrentLimit(double supply, double stator) {
+        if (supply == -1) {
             return;
         }
 
@@ -360,17 +357,14 @@ public class DriveSubsystem extends TunerSwerveDrivetrain implements Subsystem {
             this.getModule(i).getSteerMotor().getConfigurator().refresh(currentConfigs);
 
             // 2. Modify only the specific fields you need
-            currentConfigs.SupplyCurrentLimit = current;
+            currentConfigs.SupplyCurrentLimit = supply;
             currentConfigs.SupplyCurrentLimitEnable = true;
+            currentConfigs.StatorCurrentLimit = stator;
+            currentConfigs.StatorCurrentLimitEnable = true;
 
             // 3. Apply the updated object back to the motor
             this.getModule(i).getSteerMotor().getConfigurator().apply(currentConfigs);
 
-        }
-
-        for (int i = 0; i < 4; i++) {
-            // Access each module's drive motor and get its stator current
-            this.getModule(i).getSteerMotor().getConfigurator().apply(currentConfigs);
         }
     }
 }

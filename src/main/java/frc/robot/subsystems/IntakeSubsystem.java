@@ -82,7 +82,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     else {
       isIntaking = true;
-      intakeMotor.set(-0.7);
+      intakeMotor.set(-0.9);
     }
   }
 
