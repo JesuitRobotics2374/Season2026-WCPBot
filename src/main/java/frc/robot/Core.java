@@ -14,20 +14,22 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.drivetrain.TunerConstants;
+import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.utils.Telemetry;
 import frc.robot.subsystems.drivetrain.DriveSubsystem;
+import frc.robot.align.driverAssist.FixYawToHub;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.PowerManagement;
 import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.ShooterSubsystem.Side;
 
 public class Core {
     private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
@@ -37,7 +39,7 @@ public class Core {
                                                                                              // velocity
 
     private static final double TranslationalAccelerationLimit = 7.5; // meters per second^2
-    private static final double RotationalAccelerationLimit = Math.PI * 5.5; // radians per second^2
+    private static final double RotationalAccelerationLimit = Math.PI * 7.5; // radians per second^2
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -53,18 +55,22 @@ public class Core {
 
     public final DriveSubsystem drivetrain = TunerConstants.createDrivetrain();
 
-    private final IntakeSubsystem m_intake = new IntakeSubsystem();
-    private final HopperSubsystem m_hopper = new HopperSubsystem();
-    private final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
-    private final ClimberSubsystem m_climber = new ClimberSubsystem();
-    private final HoodSubsystem m_hood = new HoodSubsystem();
+    public final IntakeSubsystem m_intake = new IntakeSubsystem();
+    public final HopperSubsystem m_hopper = new HopperSubsystem();
+    public final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
+    public final ClimberSubsystem m_climber = new ClimberSubsystem();
+    public final HoodSubsystem m_hood = new HoodSubsystem();
 
-    private final PowerManagement m_powerManager = new PowerManagement(drivetrain, m_climber, m_hopper, m_intake,
+    public final VisionSubsystem m_vision = new VisionSubsystem();
+    public final PowerManagement m_powerManager = new PowerManagement(drivetrain, m_climber, m_hopper, m_intake,
             m_shooter);
 
     private final SlewRateLimiter xRateLimiter = new SlewRateLimiter(TranslationalAccelerationLimit);
     private final SlewRateLimiter yRateLimiter = new SlewRateLimiter(TranslationalAccelerationLimit);
     private final SlewRateLimiter omegaRateLimiter = new SlewRateLimiter(RotationalAccelerationLimit);
+
+    private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, false);
+    private boolean yawHubAlign = false;
 
     public Core() {
         configureBindings();
@@ -108,15 +114,20 @@ public class Core {
                 // Drivetrain will execute this command periodically
 
                 drivetrain.applyRequest(() -> {
+                    double axisScale = getGlobalSlowMode();
 
-                    double speedX = -driveController.getLeftY() * MaxSpeed * getGlobalSlowMode();
-                    double speedY = -driveController.getLeftX() * MaxSpeed * getGlobalSlowMode();
-                    double speedTheta = -driveController.getRightX() * MaxAngularRate * getGlobalSlowMode();
+                    double driverX = -driveController.getLeftY() * MaxSpeed * axisScale;
+                    double driverY = -driveController.getLeftX() * MaxSpeed * axisScale;
+                    double driverTheta = -driveController.getRightX() * MaxAngularRate * axisScale;
 
-                    return drive.withVelocityX(xRateLimiter.calculate(speedX)) // Drive forward with negative Y
+                    boolean driverActive = Math.abs(driveController.getRightX()) > 0.1 || !yawHubAlign;
+
+                    double desiredRotationalRate = driverActive ? driverTheta : calculateRotationalRate();
+
+                    return drive.withVelocityX(xRateLimiter.calculate(driverX)) // Drive forward with negative Y
                                                                                // (forward)
-                            .withVelocityY(yRateLimiter.calculate(speedY)) // Drive left with negative X (left)
-                            .withRotationalRate(omegaRateLimiter.calculate(speedTheta)); // Drive counterclockwise
+                            .withVelocityY(yRateLimiter.calculate(driverY)) // Drive left with negative X (left)
+                            .withRotationalRate(omegaRateLimiter.calculate(desiredRotationalRate)); // Drive counterclockwise
                                                                                          // with negative X (left)
                 }));
 
@@ -172,11 +183,23 @@ public class Core {
         driveController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
         driveController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
 
+        // CLIMBER
+
         driveController.rightBumper().onTrue(m_climber.extendArm());
         driveController.leftBumper().onTrue(m_climber.retractArm());
 
         driveController.x().whileTrue(m_climber.rotateCommand(-0.3));
         driveController.y().whileTrue(m_climber.rotateCommand(0.3));
+
+        // DRIVER ASSIST
+
+        driveController.leftTrigger().onTrue(new InstantCommand(() -> {
+            CommandScheduler.getInstance().schedule(fixYawToHub);
+            yawHubAlign = true;}));
+
+        driveController.leftTrigger().onFalse(new InstantCommand(() -> {
+            CommandScheduler.getInstance().cancel(fixYawToHub);
+            yawHubAlign = false;}));
 
         // HOPPER
 
@@ -202,5 +225,9 @@ public class Core {
 
     private double getGlobalSlowMode() {
         return 1 - 0.75 * driveController.getRightTriggerAxis();
+    }
+
+    private double calculateRotationalRate() {
+        return fixYawToHub.getRotationalRate();
     }
 }
