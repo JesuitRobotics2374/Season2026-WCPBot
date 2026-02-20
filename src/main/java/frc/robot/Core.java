@@ -9,24 +9,37 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.drivetrain.TunerConstants;
+import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.utils.Telemetry;
 import frc.robot.subsystems.drivetrain.DriveSubsystem;
+import frc.robot.align.driverAssist.FixYawToHub;
+import frc.robot.subsystems.ClimberSubsystem;
+import frc.robot.subsystems.HoodSubsystem;
 import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.PowerManagement;
 import frc.robot.subsystems.ShooterSubsystem;
 
 public class Core {
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
+                                                                                        // speed
+    private double MaxAngularRate = 0.65 * RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per
+                                                                                             // second max angular
+                                                                                             // velocity
+
+    private static final double TranslationalAccelerationLimit = 7.5; // meters per second^2
+    private static final double RotationalAccelerationLimit = Math.PI * 7.5; // radians per second^2
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -42,9 +55,22 @@ public class Core {
 
     public final DriveSubsystem drivetrain = TunerConstants.createDrivetrain();
 
-    private final IntakeSubsystem m_intake = new IntakeSubsystem();
-    private final ShooterSubsystem m_shooter = new ShooterSubsystem();
-    private final HopperSubsystem m_hopper = new HopperSubsystem();
+    public final IntakeSubsystem m_intake = new IntakeSubsystem();
+    public final HopperSubsystem m_hopper = new HopperSubsystem();
+    public final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
+    public final ClimberSubsystem m_climber = new ClimberSubsystem();
+    public final HoodSubsystem m_hood = new HoodSubsystem();
+
+    public final VisionSubsystem m_vision = new VisionSubsystem();
+    public final PowerManagement m_powerManager = new PowerManagement(drivetrain, m_climber, m_hopper, m_intake,
+            m_shooter);
+
+    private final SlewRateLimiter xRateLimiter = new SlewRateLimiter(TranslationalAccelerationLimit);
+    private final SlewRateLimiter yRateLimiter = new SlewRateLimiter(TranslationalAccelerationLimit);
+    private final SlewRateLimiter omegaRateLimiter = new SlewRateLimiter(RotationalAccelerationLimit);
+
+    private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, false);
+    private boolean yawHubAlign = false;
 
     public Core() {
         configureBindings();
@@ -64,43 +90,56 @@ public class Core {
         tab.addDouble("Speed Left", () -> m_shooter.getSpeedRpmLeft()).withPosition(2, 1).withSize(5, 3);
         tab.addDouble("Target Speed Left", () -> m_shooter.getTargetRpmLeft()).withPosition(7, 1).withSize(2, 1);
 
+        tab.addDouble("Speed Kicker", () -> m_shooter.getSpeedRpmKicker()).withPosition(2, 1).withSize(5, 3);
+        tab.addDouble("Target Speed Kicker", () -> m_shooter.getTargetRpmKicker()).withPosition(7, 1).withSize(2, 1);
+
+        tab.addDouble("Climber Rotations", () -> m_climber.getRotations());
+
+        tab.addBoolean("Auto Shooting", () -> m_shooter.getIsAutoShooting());
+
+        tab.addBoolean("Shooting", () -> m_shooter.isShooting());
+        tab.addBoolean("Kicking", () -> m_shooter.isKicking());
+        tab.addBoolean("Rolling", () -> m_hopper.isRolling());
+        tab.addBoolean("Intaking", () -> m_intake.isIntaking());
+
+        tab.addDouble("drive limit", () -> m_powerManager.getDriveLimit());
+        tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
     }
 
     private void configureBindings() {
+
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-driveController.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-driveController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(-driveController.getRightX() * MaxAngularRate) // Drive counterclockwise
-                                                                                           // with negative X (left)
-                ));
+                // Drivetrain will execute this command periodically
 
-        m_shooter.setDefaultCommand(
-                Commands.run(() -> {
-                    double speed = operatorController.getRightY();
-                    if (speed > 0.1) { // Added a small deadband
-                        m_shooter.raise();
-                    } else if (speed < -0.1) {
-                        m_shooter.lower();
-                    } else {
-                        m_shooter.stopActuator();
-                    }
-                }, m_shooter));
+                drivetrain.applyRequest(() -> {
+                    double axisScale = getGlobalSlowMode();
+
+                    double driverX = -driveController.getLeftY() * MaxSpeed * axisScale;
+                    double driverY = -driveController.getLeftX() * MaxSpeed * axisScale;
+                    double driverTheta = -driveController.getRightX() * MaxAngularRate * axisScale;
+
+                    boolean driverActive = Math.abs(driveController.getRightX()) > 0.1 || !yawHubAlign;
+
+                    double desiredRotationalRate = driverActive ? driverTheta : calculateRotationalRate();
+
+                    return drive.withVelocityX(xRateLimiter.calculate(driverX)) // Drive forward with negative Y
+                                                                               // (forward)
+                            .withVelocityY(yRateLimiter.calculate(driverY)) // Drive left with negative X (left)
+                            .withRotationalRate(omegaRateLimiter.calculate(desiredRotationalRate)); // Drive counterclockwise
+                                                                                         // with negative X (left)
+                }));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
-            drivetrain.applyRequest(() -> idle).ignoringDisable(true)
-        );
+                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
         driveController.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        driveController.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-driveController.getLeftY(), -driveController.getLeftX()))
-        ));
+        driveController.b().whileTrue(drivetrain.applyRequest(() -> point
+                .withModuleDirection(new Rotation2d(-driveController.getLeftY(), -driveController.getLeftX()))));
 
         // Reset the field-centric heading on left bumper press.
         driveController.back().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
@@ -109,32 +148,62 @@ public class Core {
 
         // SHOOTER
 
-        operatorController.povUp().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
-        operatorController.povDown().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
+        operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
+        operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
-        operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpmLeft(100)));
-        operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmLeft(100)));
+        // operatorController.rightTrigger().onTrue(new InstantCommand(() ->
+        // m_shooter.increaseSelectedTarget(100)));
+        // operatorController.leftTrigger().onTrue(new InstantCommand(() ->
+        // m_shooter.decreaseSelectedTarget(100)));
 
-        operatorController.rightTrigger().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpmRight(100)));
-        operatorController.leftTrigger().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmRight(100)));
+        // operatorController.povRight().onTrue(new InstantCommand(() ->
+        // m_shooter.setSelected(Side.RIGHT)));
+        // operatorController.povUp().onTrue(new InstantCommand(() ->
+        // m_shooter.setSelected(Side.CENTER)));
+        // operatorController.povLeft().onTrue(new InstantCommand(() ->
+        // m_shooter.setSelected(Side.LEFT)));
+        // operatorController.povDown().onTrue(new InstantCommand(() ->
+        // m_shooter.setSelected(Side.KICKER)));
 
-        operatorController.povRight().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpmCenter(100)));
-        operatorController.povLeft().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpmCenter(100)));
+        // operatorController.y().onTrue(new InstantCommand(() ->
+        // m_shooter.rotateAtCached()));
 
-        operatorController.y().onTrue(new InstantCommand(() -> m_shooter.rotateAtCached()));
-        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.stop()));
+        // operatorController.x().onTrue(new InstantCommand(() ->
+        // m_shooter.rotateKicker()));
+
+        operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+
+        operatorController.rightTrigger().onTrue(m_hood.changePosition(0.1));
+        operatorController.leftTrigger().onTrue(m_hood.changePosition(-0.1));
 
         // INTAKE
 
-        operatorController.a().whileTrue(m_intake.intake()).onFalse(m_intake.stop());
+        operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));
 
         driveController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
         driveController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
 
+        // CLIMBER
+
+        driveController.rightBumper().onTrue(m_climber.extendArm());
+        driveController.leftBumper().onTrue(m_climber.retractArm());
+
+        driveController.x().whileTrue(m_climber.rotateCommand(-0.3));
+        driveController.y().whileTrue(m_climber.rotateCommand(0.3));
+
+        // DRIVER ASSIST
+
+        driveController.leftTrigger().onTrue(new InstantCommand(() -> {
+            CommandScheduler.getInstance().schedule(fixYawToHub);
+            yawHubAlign = true;}));
+
+        driveController.leftTrigger().onFalse(new InstantCommand(() -> {
+            CommandScheduler.getInstance().cancel(fixYawToHub);
+            yawHubAlign = false;}));
+
         // HOPPER
 
-        operatorController.back().onTrue(m_hopper.roll());
-        operatorController.leftStick().onTrue(m_hopper.stop());
+        // operatorController.b().onTrue(new InstantCommand(() -> m_hopper.roll()));
 
     }
 
@@ -142,18 +211,23 @@ public class Core {
         // Simple drive forward auton
         final var idle = new SwerveRequest.Idle();
         return Commands.sequence(
-            // Reset our field centric heading to match the robot
-            // facing away from our alliance station wall (0 deg).
-            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-            // Then slowly drive forward (away from us) for 5 seconds.
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(0.5)
-                    .withVelocityY(0)
-                    .withRotationalRate(0)
-            )
-            .withTimeout(5.0),
-            // Finally idle for the rest of auton
-            drivetrain.applyRequest(() -> idle)
-        );
+                // Reset our field centric heading to match the robot
+                // facing away from our alliance station wall (0 deg).
+                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+                // Then slowly drive forward (away from us) for 5 seconds.
+                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
+                        .withVelocityY(0)
+                        .withRotationalRate(0))
+                        .withTimeout(5.0),
+                // Finally idle for the rest of auton
+                drivetrain.applyRequest(() -> idle));
+    }
+
+    private double getGlobalSlowMode() {
+        return 1 - 0.75 * driveController.getRightTriggerAxis();
+    }
+
+    private double calculateRotationalRate() {
+        return fixYawToHub.getRotationalRate();
     }
 }

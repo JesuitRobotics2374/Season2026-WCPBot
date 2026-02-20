@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -18,6 +20,10 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean raised;
   private boolean lowered;
 
+  private static final double CURRENT_LIMIT = 25.0; // Amps
+
+  private boolean isIntaking;
+
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     intakeMotor = new TalonFX(37);
@@ -27,6 +33,13 @@ public class IntakeSubsystem extends SubsystemBase {
     pivotMotor.setNeutralMode(NeutralModeValue.Brake);
     raised = true;
     lowered = false;
+
+    TalonFXConfiguration controlCfg = new TalonFXConfiguration();
+    controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
+    controlCfg.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
+    controlCfg.CurrentLimits.StatorCurrentLimitEnable = true;
+    controlCfg.CurrentLimits.StatorCurrentLimit = CURRENT_LIMIT / 0.75;
+
   }
 
   public Command raiseManual() {
@@ -73,11 +86,19 @@ public class IntakeSubsystem extends SubsystemBase {
   //       this);
   // }
 
-  public Command intake() {
-    return new InstantCommand(() -> intakeMotor.set(-0.7), this);
+  public void intake() {
+    if (isIntaking) {
+      isIntaking = false;
+      intakeMotor.stopMotor();;
+    }
+    else {
+      isIntaking = true;
+      intakeMotor.set(-0.8);
+    }
   }
 
   public Command stop() {
+    isIntaking = false;
     return new InstantCommand(() -> intakeMotor.set(0), this);
   }
 
@@ -88,6 +109,10 @@ public class IntakeSubsystem extends SubsystemBase {
   public double getIntakeSupplyCurrent() {
     return intakeMotor.getSupplyCurrent().getValueAsDouble() +
            pivotMotor.getSupplyCurrent().getValueAsDouble();
+  }
+
+  public boolean isIntaking() {
+    return isIntaking;
   }
 
   @Override
