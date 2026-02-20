@@ -31,13 +31,14 @@ public class ShooterSubsystem extends SubsystemBase {
     private double targetRpmCenter = 4100;
     private double targetRpmLeft = 3500;
     private double targetRpmRight = 3500;
-    private double targetRpmKicker = 1100;
+    private double targetRpmKicker = 2000;
 
     // Constants
     private static final double MAX_RPM = 6000.0;
     private static final double MIN_RPM = 5;
     private static final double RPM_TO_RPS = 1.0 / 60.0;
-    private static final double CURRENT_LIMIT = 40.0; // Amps
+    private static final double CURRENT_LIMIT = 20.0; // Amps
+    private static final double KICKER_CURRENT_LIMIT = 60; // Amps
 
     public enum Side {
         LEFT,
@@ -68,6 +69,8 @@ public class ShooterSubsystem extends SubsystemBase {
         // Current Limits
         controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfg.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
+        controlCfg.CurrentLimits.StatorCurrentLimitEnable = true;
+        controlCfg.CurrentLimits.StatorCurrentLimit = CURRENT_LIMIT / 0.75;
 
         controlCfg.Slot0.kP = 0.09;
         controlCfg.Slot0.kI = 0;
@@ -81,25 +84,52 @@ public class ShooterSubsystem extends SubsystemBase {
         // Current Limits
         controlCfgRight.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfgRight.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
+        controlCfg.CurrentLimits.StatorCurrentLimitEnable = true;
+        controlCfg.CurrentLimits.StatorCurrentLimit = CURRENT_LIMIT / 0.75;
+
 
         controlCfgRight.Slot0.kP = 0.09;
         controlCfgRight.Slot0.kI = 0;
         controlCfgRight.Slot0.kD = 0.001;
         controlCfgRight.Slot0.kV = 0.12; // ~12V
 
+        TalonFXConfiguration controlCfgKicker = new TalonFXConfiguration();
+        controlCfg.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+        controlCfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+
+
+         // Current Limits
+        controlCfgKicker.CurrentLimits.SupplyCurrentLimitEnable = true;
+        controlCfgKicker.CurrentLimits.SupplyCurrentLimit = KICKER_CURRENT_LIMIT;
+        controlCfgKicker.CurrentLimits.StatorCurrentLimitEnable = true;
+        controlCfgKicker.CurrentLimits.StatorCurrentLimit = KICKER_CURRENT_LIMIT / 0.5;
+
+        controlCfgKicker.Slot0.kP = 0.09;
+        controlCfgKicker.Slot0.kI = 0;
+        controlCfgKicker.Slot0.kD = 0.001;
+        controlCfgKicker.Slot0.kV = 0.12; // ~12V
+
+
         left.getConfigurator().apply(controlCfg);
         center.getConfigurator().apply(controlCfg);
         right.getConfigurator().apply(controlCfgRight);
-        kicker.getConfigurator().apply(controlCfg);
+        kicker.getConfigurator().apply(controlCfgKicker);
     }
 
     public boolean isVelocityWithinTolerance() {
-        boolean leftReady = Math.abs(getTargetRpmLeft() - getSpeedRpmLeft()) <= 100;
-        boolean rightReady = Math.abs(getTargetRpmRight() - getSpeedRpmRight()) <= 100;
-        boolean centerReady = Math.abs(getTargetRpmCenter() - getSpeedRpmCenter()) <= 100;
+    double tolerancePercent = 0.05; // 5%
 
-        return (leftReady && rightReady && centerReady);
-    }
+    boolean leftReady = Math.abs(getTargetRpmLeft() - getSpeedRpmLeft())
+            <= getTargetRpmLeft() * tolerancePercent;
+
+    boolean rightReady = Math.abs(getTargetRpmRight() - getSpeedRpmRight())
+            <= getTargetRpmRight() * tolerancePercent;
+
+    boolean centerReady = Math.abs(getTargetRpmCenter() - getSpeedRpmCenter())
+            <= getTargetRpmCenter() * tolerancePercent;
+
+    return leftReady && rightReady && centerReady;
+}
 
     private void stopAll() {
         kicker.stopMotor();

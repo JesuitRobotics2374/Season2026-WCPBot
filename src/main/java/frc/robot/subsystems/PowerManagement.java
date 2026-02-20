@@ -48,8 +48,16 @@ public class PowerManagement extends SubsystemBase {
   private boolean lastShooting = false;
   private boolean lastIntaking = false;
 
+  double clock = 0;
+
   @Override
   public void periodic() {
+    clock++;
+    if (clock == 10) {
+      clock = 0;
+      //System.out.println("ran periodic");
+    }
+  
 
     boolean currentShooting = shooter.isShooting();
     boolean currentIntaking = intake.isIntaking();
@@ -71,11 +79,11 @@ public class PowerManagement extends SubsystemBase {
       driveLimit = 20;
       steerLimit = 10;
     } else if (currentShooting) {
+      driveLimit = 25;
+      steerLimit = 15;
+    } else if (currentIntaking) {
       driveLimit = 30;
       steerLimit = 20;
-    } else if (currentIntaking) {
-      driveLimit = 50;
-      steerLimit = 40;
     } else {
       driveLimit = Constants.DEFAULT_DRIVE_CURRENT;
       steerLimit = Constants.DEFAULT_STEER_CURRENT;
