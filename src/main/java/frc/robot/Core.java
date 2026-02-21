@@ -111,6 +111,8 @@ public class Core {
 
         tab.addDouble("drive pos x", () -> drivetrain.getRobotX());
          tab.addDouble("drive pos y", () -> drivetrain.getRobotY());
+
+         tab.addDouble("hood pos", () -> m_hood.getCurrentPos());
     }
 
     private void configureBindings() {
