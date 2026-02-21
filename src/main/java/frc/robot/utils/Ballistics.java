@@ -21,8 +21,8 @@ public class Ballistics {
     private static double time; // seconds (s)
 
     // Other constants
-    private static final double deltaH = 1; // meters (m)
-    private static final double lambda = 45 * (Math.PI) / 180; // radians (rad)
+    private static final double deltaH = 0.4892; // meters (m)
+    private static final double lambda = 55 * (Math.PI) / 180; // radians (rad)
 
     private static final double m = 0.215; // kilograms (kg)
     private static final double g = -9.8; // meters per second squared (m/s^2)

@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -32,6 +33,7 @@ import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.PowerManagement;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.Side;
 
 public class Core {
     private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
@@ -106,6 +108,9 @@ public class Core {
 
         tab.addDouble("drive limit", () -> m_powerManager.getDriveLimit());
         tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
+
+        tab.addDouble("drive pos x", () -> drivetrain.getRobotX());
+         tab.addDouble("drive pos y", () -> drivetrain.getRobotY());
     }
 
     private void configureBindings() {
@@ -153,19 +158,19 @@ public class Core {
         operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
         operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
-        // operatorController.rightTrigger().onTrue(new InstantCommand(() ->
-        // m_shooter.increaseSelectedTarget(100)));
-        // operatorController.leftTrigger().onTrue(new InstantCommand(() ->
-        // m_shooter.decreaseSelectedTarget(100)));
+        operatorController.rightTrigger().onTrue(new InstantCommand(() ->
+        m_shooter.increaseSelectedTarget(50)));
+        operatorController.leftTrigger().onTrue(new InstantCommand(() ->
+        m_shooter.decreaseSelectedTarget(50)));
 
-        // operatorController.povRight().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.RIGHT)));
-        // operatorController.povUp().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.CENTER)));
-        // operatorController.povLeft().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.LEFT)));
-        // operatorController.povDown().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.KICKER)));
+        operatorController.povRight().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.RIGHT)));
+        operatorController.povUp().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.CENTER)));
+        operatorController.povLeft().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.LEFT)));
+        operatorController.povDown().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.KICKER)));
 
         // operatorController.y().onTrue(new InstantCommand(() ->
         // m_shooter.rotateAtCached()));
@@ -175,8 +180,8 @@ public class Core {
 
         operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
 
-        operatorController.rightTrigger().onTrue(m_hood.changePosition(0.1));
-        operatorController.leftTrigger().onTrue(m_hood.changePosition(-0.1));
+        operatorController.back().onTrue(m_hood.changePosition(0.1));
+        operatorController.start().onTrue(m_hood.changePosition(-0.1));
 
         // INTAKE
 
