@@ -46,17 +46,21 @@ public class ShooterSubsystem extends SubsystemBase {
     private static final double MAX_RPM = 6000.0;
     private static final double MIN_RPM = 5;
     private static final double RPM_TO_RPS = 1.0 / 60.0;
-    private static final double CURRENT_LIMIT = 20.0; // Amps
+    private static final double CURRENT_LIMIT = 30.0; // Amps
     private static final double KICKER_CURRENT_LIMIT = 60; // Amps
 
-    private boolean doAutoShoot = true; // enabled by default
+    private boolean doAutoShoot = false; // enabled by default
     private boolean isRed;
     private double MIN_RANGE = 0.5; // meters
 
     // FIRST VELOCITY, THEN RPM
-    private double[][] leftShooterValues = {{}, {} };
-    private double[][] centerShooterValues = { {}, {} };
-    private double[][] rightShooterValues = { {}, {} };
+    // private double[][] leftShooterValues = {{6, 3100}, {6.73, 3450}, {7.72, 4000}};
+    // private double[][] centerShooterValues = {{6.26, 3900}, {6.73, 4100}, {7.72, 4900}}; //these are vel based
+    // private double[][] rightShooterValues = {{6.26, 3300}, {6.73, 3550}, {7.72, 4250}};
+
+    private double[][] leftShooterValues = {{}};
+    private double[][] centerShooterValues = {{}}; //these are vel based
+    private double[][] rightShooterValues = {{}};
 
     private double[] leftCoeffs;
     private double[] centerCoeffs;
@@ -137,7 +141,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         this.isRed = isRed;
 
-        calculateShooterCurves();
+        //calculateShooterCurves();
     }
 
     private void calculateShooterCurves() {
@@ -203,6 +207,7 @@ public class ShooterSubsystem extends SubsystemBase {
                 rotate(getTargetRpmLeft(), getTargetRpmRight(), getTargetRpmCenter());
             },
             () -> {
+                rotate(getTargetRpmLeft(), getTargetRpmRight(), getTargetRpmCenter());
                 if (isVelocityWithinTolerance()) {
                     setKickerControl();
                     m_hopper.startRoll();

@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class HoodSubsystem extends SubsystemBase {
@@ -40,10 +41,6 @@ public class HoodSubsystem extends SubsystemBase {
         SmartDashboard.putData(this);
     }
 
-    public double getPosition() {
-        return currentPosition;
-    }
-
     /** Expects a position between 0.0 and 1.0 */
     public void setPosition(double position) {
         final double clampedPosition = MathUtil.clamp(position, kMinPosition, kMaxPosition);
@@ -58,14 +55,7 @@ public class HoodSubsystem extends SubsystemBase {
             .andThen(Commands.waitUntil(this::isPositionWithinTolerance));
     }
 
-    /**
-     * changes the position in increments
-     * @param delta amount to change
-     */
     public Command changePosition(double delta) {
-        if (currentPosition + delta < 0.0 || currentPosition + delta > 1.0) {
-            return positionCommand(currentPosition);
-        }
         return positionCommand(currentPosition + delta);
     }
 
@@ -88,6 +78,10 @@ public class HoodSubsystem extends SubsystemBase {
         currentPosition = targetPosition > currentPosition
             ? Math.min(targetPosition, currentPosition + maxPercentageTraveled)
             : Math.max(targetPosition, currentPosition - maxPercentageTraveled);
+    }
+
+    public double getCurrentPos() {
+        return currentPosition;
     }
 
     @Override
