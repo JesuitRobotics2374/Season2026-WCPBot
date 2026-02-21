@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.Constants;
 import frc.robot.subsystems.drivetrain.DriveSubsystem;
@@ -50,6 +53,14 @@ public class PowerManagement extends SubsystemBase {
 
   double clock = 0;
 
+  private void asyncUpdateLimits() {
+    Command asyncUpdateLimitsCommand =  new InstantCommand(() -> {
+      drivetrain.setDriveCurrentLimit(driveLimit, driveLimit / 0.65);
+      drivetrain.setSteerCurrentLimit(steerLimit, steerLimit / 0.65);
+    });
+    CommandScheduler.getInstance().schedule(asyncUpdateLimitsCommand);
+  }
+
   @Override
   public void periodic() {
     clock++;
@@ -90,8 +101,7 @@ public class PowerManagement extends SubsystemBase {
     }
 
     // Apply config ONLY when state changed
-    drivetrain.setDriveCurrentLimit(driveLimit, driveLimit / 0.65);
-    drivetrain.setSteerCurrentLimit(steerLimit, steerLimit / 0.65);
+    asyncUpdateLimits();
   }
 
 }

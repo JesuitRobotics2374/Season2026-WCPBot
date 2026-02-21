@@ -106,6 +106,10 @@ public class Core {
         tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
     }
 
+    private double shooterDampen() {
+        return m_shooter.getIsAutoShooting() ? 0.4 : 1;
+    }
+
     private void configureBindings() {
 
         // Note that X is defined as forward according to WPILib convention,
@@ -116,8 +120,8 @@ public class Core {
                 drivetrain.applyRequest(() -> {
                     double axisScale = getGlobalSlowMode();
 
-                    double driverX = -driveController.getLeftY() * MaxSpeed * axisScale;
-                    double driverY = -driveController.getLeftX() * MaxSpeed * axisScale;
+                    double driverX = -driveController.getLeftY() * MaxSpeed * axisScale * shooterDampen();
+                    double driverY = -driveController.getLeftX() * MaxSpeed * axisScale * shooterDampen();
                     double driverTheta = -driveController.getRightX() * MaxAngularRate * axisScale;
 
                     boolean driverActive = Math.abs(driveController.getRightX()) > 0.1 || !yawHubAlign;
