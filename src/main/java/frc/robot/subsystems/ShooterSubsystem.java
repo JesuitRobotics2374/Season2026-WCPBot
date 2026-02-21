@@ -1,6 +1,9 @@
 
 package frc.robot.subsystems;
 
+import org.apache.commons.math4.legacy.fitting.PolynomialCurveFitter;
+import org.apache.commons.math4.legacy.fitting.WeightedObservedPoints;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -9,11 +12,16 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.drivetrain.DriveSubsystem;
+import frc.robot.utils.Ballistics;
 
 public class ShooterSubsystem extends SubsystemBase {
 
@@ -23,6 +31,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final TalonFX kicker;
 
     private HopperSubsystem m_hopper;
+    private DriveSubsystem m_drivetrain;
 
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
@@ -40,6 +49,19 @@ public class ShooterSubsystem extends SubsystemBase {
     private static final double CURRENT_LIMIT = 20.0; // Amps
     private static final double KICKER_CURRENT_LIMIT = 60; // Amps
 
+    private boolean doAutoShoot = true; // enabled by default
+    private boolean isRed;
+    private double MIN_RANGE = 0.5; // meters
+
+    // FIRST VELOCITY, THEN RPM
+    private double[][] leftShooterValues = {{}, {} };
+    private double[][] centerShooterValues = { {}, {} };
+    private double[][] rightShooterValues = { {}, {} };
+
+    private double[] leftCoeffs;
+    private double[] centerCoeffs;
+    private double[] rightCoeffs;
+
     public enum Side {
         LEFT,
         CENTER,
@@ -52,9 +74,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private boolean isShooting = false;
     private boolean isKicking = false;
 
-    public ShooterSubsystem(HopperSubsystem m_hopper) {
+    public ShooterSubsystem(HopperSubsystem m_hopper, boolean isRed, DriveSubsystem m_drivetrain) {
 
         this.m_hopper = m_hopper;
+        this.m_drivetrain = m_drivetrain;
 
         left = new TalonFX(31);
         center = new TalonFX(32);
@@ -87,18 +110,16 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfg.CurrentLimits.StatorCurrentLimitEnable = true;
         controlCfg.CurrentLimits.StatorCurrentLimit = CURRENT_LIMIT / 0.75;
 
-
         controlCfgRight.Slot0.kP = 0.09;
         controlCfgRight.Slot0.kI = 0;
         controlCfgRight.Slot0.kD = 0.001;
         controlCfgRight.Slot0.kV = 0.12; // ~12V
 
         TalonFXConfiguration controlCfgKicker = new TalonFXConfiguration();
-        controlCfg.MotorOutput.NeutralMode = NeutralModeValue.Coast;
-        controlCfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        controlCfgKicker.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+        controlCfgKicker.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
-
-         // Current Limits
+        // Current Limits
         controlCfgKicker.CurrentLimits.SupplyCurrentLimitEnable = true;
         controlCfgKicker.CurrentLimits.SupplyCurrentLimit = KICKER_CURRENT_LIMIT;
         controlCfgKicker.CurrentLimits.StatorCurrentLimitEnable = true;
@@ -109,27 +130,64 @@ public class ShooterSubsystem extends SubsystemBase {
         controlCfgKicker.Slot0.kD = 0.001;
         controlCfgKicker.Slot0.kV = 0.12; // ~12V
 
-
         left.getConfigurator().apply(controlCfg);
         center.getConfigurator().apply(controlCfg);
         right.getConfigurator().apply(controlCfgRight);
         kicker.getConfigurator().apply(controlCfgKicker);
+
+        this.isRed = isRed;
+
+        calculateShooterCurves();
+    }
+
+    private void calculateShooterCurves() {
+        WeightedObservedPoints leftPoints = new WeightedObservedPoints();
+        for (int i = 0; i < leftShooterValues.length; i++) {
+            double[] values = leftShooterValues[i];
+
+            leftPoints.add(values[0], values[1]);
+        }
+
+        // Fit cubic polynomial
+        PolynomialCurveFitter leftFitter = PolynomialCurveFitter.create(3);
+        leftCoeffs = leftFitter.fit(leftPoints.toList());
+
+        WeightedObservedPoints centerPoints = new WeightedObservedPoints();
+        for (int i = 0; i < centerShooterValues.length; i++) {
+            double[] values = centerShooterValues[i];
+
+            centerPoints.add(values[0], values[1]);
+        }
+
+        // Fit cubic polynomial
+        PolynomialCurveFitter centerFitter = PolynomialCurveFitter.create(3);
+        centerCoeffs = centerFitter.fit(centerPoints.toList());
+
+        WeightedObservedPoints rightPoints = new WeightedObservedPoints();
+        for (int i = 0; i < rightShooterValues.length; i++) {
+            double[] values = rightShooterValues[i];
+
+            rightPoints.add(values[0], values[1]);
+        }
+
+        // Fit cubic polynomial
+        PolynomialCurveFitter rightFitter = PolynomialCurveFitter.create(3);
+        rightCoeffs = rightFitter.fit(rightPoints.toList());
     }
 
     public boolean isVelocityWithinTolerance() {
-    double tolerancePercent = 0.05; // 5%
+        double tolerancePercent = 0.05; // 5%
 
-    boolean leftReady = Math.abs(getTargetRpmLeft() - getSpeedRpmLeft())
-            <= getTargetRpmLeft() * tolerancePercent;
+        boolean leftReady = Math.abs(getTargetRpmLeft() - getSpeedRpmLeft()) <= getTargetRpmLeft() * tolerancePercent;
 
-    boolean rightReady = Math.abs(getTargetRpmRight() - getSpeedRpmRight())
-            <= getTargetRpmRight() * tolerancePercent;
+        boolean rightReady = Math.abs(getTargetRpmRight() - getSpeedRpmRight()) <= getTargetRpmRight()
+                * tolerancePercent;
 
-    boolean centerReady = Math.abs(getTargetRpmCenter() - getSpeedRpmCenter())
-            <= getTargetRpmCenter() * tolerancePercent;
+        boolean centerReady = Math.abs(getTargetRpmCenter() - getSpeedRpmCenter()) <= getTargetRpmCenter()
+                * tolerancePercent;
 
-    return leftReady && rightReady && centerReady;
-}
+        return leftReady && rightReady && centerReady;
+    }
 
     private void stopAll() {
         kicker.stopMotor();
@@ -142,7 +200,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private boolean autoShooting = false;
     private Command existingAutoShootCommand = new FunctionalCommand(
             () -> {
-                rotate(targetRpmLeft, targetRpmRight, targetRpmCenter);
+                rotate(getTargetRpmLeft(), getTargetRpmRight(), getTargetRpmCenter());
             },
             () -> {
                 if (isVelocityWithinTolerance()) {
@@ -220,6 +278,10 @@ public class ShooterSubsystem extends SubsystemBase {
         targetRpmRight = rpm;
         targetRpmLeft = rpm;
         targetRpmCenter = rpm;
+    }
+
+    private void toggleAutoRange() {
+        doAutoShoot = !doAutoShoot;
     }
 
     public double getTargetRpm() {
@@ -324,6 +386,10 @@ public class ShooterSubsystem extends SubsystemBase {
         center.stopMotor();
     }
 
+    public Command toggleAutoShoot() {
+        return new InstantCommand(() -> toggleAutoRange());
+    }
+
     /**
      * @return Current velocity in RPM
      */
@@ -370,7 +436,69 @@ public class ShooterSubsystem extends SubsystemBase {
         return isKicking;
     }
 
+    double storedLeftRPM;
+    double storedCenterRPM;
+    double storedRightRPM;
+    boolean isFirstCycleAuto = true;
+
     @Override
     public void periodic() {
+        if (doAutoShoot) {
+            if (isFirstCycleAuto) {
+                storedLeftRPM = targetRpmLeft;
+                storedCenterRPM = targetRpmCenter;
+                storedRightRPM = targetRpmRight;
+
+                isFirstCycleAuto = false;
+            }
+
+            Translation2d absoluteTargetTranslation = getAbsoluteTranslation(isRed);
+
+            double delta_x = absoluteTargetTranslation.getX() - m_drivetrain.getRobotX();
+            double delta_y = absoluteTargetTranslation.getY() - m_drivetrain.getRobotY();
+
+            double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y) + 0.24; // add 0.24m to account for pigeon to shooter distance
+
+            if (hyp < MIN_RANGE) {
+                return;
+            }
+
+            ChassisSpeeds speeds = m_drivetrain.getCurrentRobotChassisSpeeds(); // check if needs to be made into robo
+                                                                                // rel, idk what default is
+
+            double neededVel = Ballistics.CalculateNeededShooterSpeed(hyp, speeds.vxMetersPerSecond,
+                    speeds.vyMetersPerSecond);
+
+            double neededLeftRPM = getValueFromCurve(neededVel, leftCoeffs);
+            double neededCenterRPM = getValueFromCurve(neededVel, centerCoeffs);
+            double neededRightRPM = getValueFromCurve(neededVel, rightCoeffs);
+
+            targetRpmLeft = neededLeftRPM;
+            targetRpmCenter = neededCenterRPM;
+            targetRpmRight = neededRightRPM;
+        } else {
+            isFirstCycleAuto = true;
+        }
+    }
+
+    private Translation2d getAbsoluteTranslation(boolean isRed) {
+        if (isRed) {
+            return new Translation2d(11.915394, 4.034536);
+        } else {
+            return new Translation2d(4.625594, 4.034536);
+        }
+    }
+
+    private double getValueFromCurve(double xPoint, double[] coeffs) {
+        double total = 0;
+        double power = 0;
+
+        for (double d : coeffs) {
+            total += d * Math.pow(xPoint, power);
+
+            power++;
+        }
+
+        return total;
     }
 }

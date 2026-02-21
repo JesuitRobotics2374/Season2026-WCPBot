@@ -11,6 +11,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -57,7 +59,7 @@ public class Core {
 
     public final IntakeSubsystem m_intake = new IntakeSubsystem();
     public final HopperSubsystem m_hopper = new HopperSubsystem();
-    public final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
+    public final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper, DriverStation.getAlliance().get().equals(Alliance.Red), drivetrain);
     public final ClimberSubsystem m_climber = new ClimberSubsystem();
     public final HoodSubsystem m_hood = new HoodSubsystem();
 
@@ -69,7 +71,7 @@ public class Core {
     private final SlewRateLimiter yRateLimiter = new SlewRateLimiter(TranslationalAccelerationLimit);
     private final SlewRateLimiter omegaRateLimiter = new SlewRateLimiter(RotationalAccelerationLimit);
 
-    private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, false);
+    private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, DriverStation.getAlliance().get().equals(Alliance.Red));
     private boolean yawHubAlign = false;
 
     public Core() {

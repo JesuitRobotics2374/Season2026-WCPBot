@@ -182,52 +182,52 @@ public class Ballistics {
         return mid;
     }
 
-    public static void main(String[] args) {
+    // public static void main(String[] args) {
 
-        System.out.println(CalculateNeededShooterSpeed(5, 2, 3));
+    //     System.out.println(CalculateNeededShooterSpeed(5, 2, 3));
 
-        // double ViMin = 5; // minimum initial velocity (m/s)
-        // double ViMax = 15; // maximum initial velocity (m/s)
-        // double step = 0.01; // step size in m/s
+    //     double ViMin = 5; // minimum initial velocity (m/s)
+    //     double ViMax = 15; // maximum initial velocity (m/s)
+    //     double step = 0.01; // step size in m/s
 
-        // int numPoints = (int) ((ViMax - ViMin) / step) + 1;
-        // double[] velocities = new double[numPoints];
-        // double[] deltaX = new double[numPoints];
+    //     int numPoints = (int) ((ViMax - ViMin) / step) + 1;
+    //     double[] velocities = new double[numPoints];
+    //     double[] deltaX = new double[numPoints];
 
-        // for (int i = 0; i < numPoints; i++) {
-        // double Vi = ViMin + i * step;
-        // velocities[i] = Vi;
-        // deltaX[i] = calculateX(Vi);
-        // }
+    //     for (int i = 0; i < numPoints; i++) {
+    //     double Vi = ViMin + i * step;
+    //     velocities[i] = Vi;
+    //     deltaX[i] = calculateX(Vi);
+    //     }
 
-        // // Map Δx -> Vi for polynomial fitting
-        // WeightedObservedPoints points = new WeightedObservedPoints();
-        // for (int i = 0; i < numPoints; i++) {
-        // points.add(deltaX[i], velocities[i]); // Δx as x, Vi as y
-        // }
+    //     // Map Δx -> Vi for polynomial fitting
+    //     WeightedObservedPoints points = new WeightedObservedPoints();
+    //     for (int i = 0; i < numPoints; i++) {
+    //     points.add(deltaX[i], velocities[i]); // Δx as x, Vi as y
+    //     }
 
-        // // Fit cubic polynomial
-        // PolynomialCurveFitter fitter = PolynomialCurveFitter.create(4);
-        // double[] coeff = fitter.fit(points.toList());
+    //     // Fit cubic polynomial
+    //     PolynomialCurveFitter fitter = PolynomialCurveFitter.create(4);
+    //     double[] coeff = fitter.fit(points.toList());
 
-        // System.out.println("Quartic fit (x -> Vi):");
-        // System.out.printf(
-        // "Vi ≈ %.6f + %.6f*x + %.6f*x^2 + %.6f*x^3 + %.6f*x^4%n",
-        // coeff[0], coeff[1], coeff[2], coeff[3], coeff[4]);
+    //     System.out.println("Quartic fit (x -> Vi):");
+    //     System.out.printf(
+    //     "Vi ≈ %.6f + %.6f*x + %.6f*x^2 + %.6f*x^3 + %.6f*x^4%n",
+    //     coeff[0], coeff[1], coeff[2], coeff[3], coeff[4]);
 
-        // double xTarget = 8.0;
+    //     double xTarget = 8.0;
 
-        // double ViEstimate = coeff[0]
-        // + coeff[1] * xTarget
-        // + coeff[2] * xTarget * xTarget
-        // + coeff[3] * xTarget * xTarget * xTarget
-        // + coeff[4] * xTarget * xTarget * xTarget * xTarget;
+    //     double ViEstimate = coeff[0]
+    //     + coeff[1] * xTarget
+    //     + coeff[2] * xTarget * xTarget
+    //     + coeff[3] * xTarget * xTarget * xTarget
+    //     + coeff[4] * xTarget * xTarget * xTarget * xTarget;
 
-        // System.out.println("Estimated Vi for x = " + xTarget + " m: " + ViEstimate +
-        // " m/s");
+    //     System.out.println("Estimated Vi for x = " + xTarget + " m: " + ViEstimate +
+    //     " m/s");
 
-        // System.out.println("x for estimated vi: " + calculateX(ViEstimate));
+    //     System.out.println("x for estimated vi: " + calculateX(ViEstimate));
 
-        // System.out.println(calculateY(ViEstimate, 1));
-    }
+    //     System.out.println(calculateY(ViEstimate, 1));
+    // }
 }

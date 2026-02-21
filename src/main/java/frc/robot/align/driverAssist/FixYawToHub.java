@@ -40,7 +40,7 @@ public class FixYawToHub extends Command {
 
     private Translation2d getAbsoluteTranslation(boolean isRed) {
         if (isRed) {
-            return new Translation2d(); // TODO
+            return new Translation2d(11.915394, 4.034536);
         } else {
             return new Translation2d(4.625594, 4.034536);
         }
