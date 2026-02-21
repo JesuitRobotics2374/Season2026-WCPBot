@@ -181,6 +181,9 @@ public class Core {
         // m_shooter.rotateKicker()));
 
         operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        
+        operatorController.b().onTrue(new InstantCommand(() -> m_shooter.shoot1()));
+        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.shoot2()));
 
         operatorController.back().onTrue(m_hood.changePosition(0.1));
         operatorController.start().onTrue(m_hood.changePosition(-0.1));

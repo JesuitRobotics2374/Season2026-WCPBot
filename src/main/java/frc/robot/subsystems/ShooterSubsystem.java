@@ -223,6 +223,24 @@ public class ShooterSubsystem extends SubsystemBase {
         return autoShooting;
     }
 
+    /**
+     * 2.48 meters away
+     */
+    public void shoot1() {
+        targetRpmCenter = 4100;
+        targetRpmLeft = 3500;
+        targetRpmRight = 3500;
+    }
+
+    /**
+     * 1.65 meters away
+     */
+    public void shoot2() {
+        targetRpmLeft = 3100;
+        targetRpmCenter = 3700;
+        targetRpmRight = 3100;
+    }
+
     public void autoShoot() {
         System.out.println("AUTOSHOOTING: " + autoShooting);
         if (autoShooting) {
