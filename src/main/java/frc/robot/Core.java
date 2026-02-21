@@ -11,6 +11,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,6 +31,8 @@ import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.PowerManagement;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.Side;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 public class Core {
     private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
@@ -51,7 +54,8 @@ public class Core {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController driveController = new CommandXboxController(0);
-    private final CommandXboxController operatorController = new CommandXboxController(1);
+    // private final CommandXboxController operatorController = new CommandXboxController(1);
+    public final Joystick operatorController = new Joystick(1);
 
     public final DriveSubsystem drivetrain = TunerConstants.createDrivetrain();
 
@@ -148,8 +152,8 @@ public class Core {
 
         // SHOOTER
 
-        operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
-        operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
+        // operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
+        // operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
         // operatorController.rightTrigger().onTrue(new InstantCommand(() ->
         // m_shooter.increaseSelectedTarget(100)));
@@ -171,17 +175,32 @@ public class Core {
         // operatorController.x().onTrue(new InstantCommand(() ->
         // m_shooter.rotateKicker()));
 
-        operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        // operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
 
-        operatorController.rightTrigger().onTrue(m_hood.changePosition(0.1));
-        operatorController.leftTrigger().onTrue(m_hood.changePosition(-0.1));
+        // operatorController.rightTrigger().onTrue(m_hood.changePosition(0.1));
+        // operatorController.leftTrigger().onTrue(m_hood.changePosition(-0.1));
+
+        new JoystickButton(operatorController, 7).onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.LEFT)));
+        new JoystickButton(operatorController, 7).onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        new JoystickButton(operatorController, 8).onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.CENTER)));
+        new JoystickButton(operatorController, 8).onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        new JoystickButton(operatorController, 9).onTrue(new InstantCommand(() -> m_shooter.setSelected(Side.RIGHT)));
+        new JoystickButton(operatorController, 9).onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        new JoystickButton(operatorController, 12).onTrue(new InstantCommand(() -> m_shooter.stop()));
+        new JoystickButton(operatorController, 12).onTrue(new InstantCommand(() -> m_shooter.stopKicker()));
 
         // INTAKE
 
-        operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));
+        // operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));
 
         driveController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
         driveController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
+        
+        new JoystickButton(operatorController, 5).onTrue(m_intake.purge());
+        // new JoystickButton(operatorController, 6).onTrue(m_intake.lower());
+        new JoystickButton(operatorController, 11).onTrue(m_intake.startIntaking());
+        new JoystickButton(operatorController, 14).onTrue(m_intake.stop());
+        // new JoystickButton(operatorController, 15).onTrue(m_intake.raise());
 
         // CLIMBER
 
@@ -202,6 +221,16 @@ public class Core {
             yawHubAlign = false;}));
 
         // HOPPER
+        
+        new JoystickButton(operatorController, 4).onTrue(m_hopper.purge());
+        new JoystickButton(operatorController, 16).onTrue(m_hopper.stop());
+        new JoystickButton(operatorController, 13).onTrue(m_hopper.beginRoll());
+
+        // HOOD
+
+        new JoystickButton(operatorController, 1).onTrue(m_hood.changePosition(0.1));
+        new JoystickButton(operatorController, 3).onTrue(m_hood.changePosition(-0.1));
+        // new JoystickButton(operatorController, 2).onTrue(m_hood.stop());
 
         // operatorController.b().onTrue(new InstantCommand(() -> m_hopper.roll()));
 

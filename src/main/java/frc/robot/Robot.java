@@ -29,6 +29,8 @@ public class Robot extends TimedRobot {
         m_timeAndJoystickReplay.update();
         m_core.drivetrain.passGlobalEstimates(m_core.m_vision.getGlobalFieldPoses());
 
+        System.out.println(m_core.operatorController.getY());
+
         CommandScheduler.getInstance().run(); 
     }
 

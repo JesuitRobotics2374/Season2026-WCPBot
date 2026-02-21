@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Core;
 
 public class ShooterSubsystem extends SubsystemBase {
 
@@ -24,6 +25,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private HopperSubsystem m_hopper;
 
+    public final Core core = new Core();
+
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
@@ -32,6 +35,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private double targetRpmLeft = 3500;
     private double targetRpmRight = 3500;
     private double targetRpmKicker = 2000;
+
+    private double leftTrim = core.operatorController.getX() - 1;
+    private double centerTrim = core.operatorController.getY() - 1;
+    private double rightTrim = core.operatorController.getZ() - 1;
 
     // Constants
     private static final double MAX_RPM = 6000.0;
@@ -180,7 +187,7 @@ public class ShooterSubsystem extends SubsystemBase {
             rpm = MAX_RPM;
         if (rpm < -MAX_RPM)
             rpm = -MAX_RPM;
-        targetRpmCenter = rpm;
+        targetRpmCenter = rpm + centerTrim;
     }
 
     private void setTargetRpmLeft(double rpm) {
@@ -188,7 +195,7 @@ public class ShooterSubsystem extends SubsystemBase {
             rpm = MAX_RPM;
         if (rpm < -MAX_RPM)
             rpm = -MAX_RPM;
-        targetRpmLeft = rpm;
+        targetRpmLeft = rpm + leftTrim;
     }
 
     private void setTargetRpmRight(double rpm) {
@@ -196,7 +203,7 @@ public class ShooterSubsystem extends SubsystemBase {
             rpm = MAX_RPM;
         if (rpm < -MAX_RPM)
             rpm = -MAX_RPM;
-        targetRpmRight = rpm;
+        targetRpmRight = rpm + rightTrim;
     }
 
     private void setTargetRpmKicker(double rpm) {
@@ -302,6 +309,18 @@ public class ShooterSubsystem extends SubsystemBase {
         left.setControl(velocityRequest.withVelocity(rpmLeft * RPM_TO_RPS));
         center.setControl(velocityRequest.withVelocity(rpmCenter * RPM_TO_RPS));
         right.setControl(velocityRequest.withVelocity(rpmRight * RPM_TO_RPS));
+    }
+
+    public void rotateLeft(double rpmLeft) {
+        left.setControl(velocityRequest.withVelocity(rpmLeft * RPM_TO_RPS));
+    }
+
+    public void rotateCenter(double rpmCenter) {
+        left.setControl(velocityRequest.withVelocity(rpmCenter * RPM_TO_RPS));
+    }
+
+    public void rotateRight(double rpmRight) {
+        left.setControl(velocityRequest.withVelocity(rpmRight * RPM_TO_RPS));
     }
 
     public void rotateAtCached() {
