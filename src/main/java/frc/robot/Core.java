@@ -12,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -117,6 +118,7 @@ public class Core {
          tab.addDouble("hood pos", () -> m_hood.getCurrentPos());
 
          tab.addDouble("dist to hub", () -> m_shooter.getDistToHub());
+         tab.addDouble("time", () -> DriverStation.getMatchTime());
     }
 
     private double shooterDampen() {
