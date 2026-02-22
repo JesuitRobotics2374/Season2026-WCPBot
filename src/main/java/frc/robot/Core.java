@@ -143,10 +143,10 @@ public class Core {
 
                     double desiredRotationalRate = driverActive ? driverTheta : calculateRotationalRate();
 
-                    return drive.withVelocityX(xRateLimiter.calculate(driverX)) // Drive forward with negative Y
+                    return drive.withVelocityX(driverX) // Drive forward with negative Y
                                                                                // (forward)
-                            .withVelocityY(yRateLimiter.calculate(driverY)) // Drive left with negative X (left)
-                            .withRotationalRate(omegaRateLimiter.calculate(desiredRotationalRate)); // Drive counterclockwise
+                            .withVelocityY(driverY) // Drive left with negative X (left)
+                            .withRotationalRate(desiredRotationalRate); // Drive counterclockwise
                                                                                          // with negative X (left)
                 }));
 
