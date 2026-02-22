@@ -32,6 +32,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private HopperSubsystem m_hopper;
     private DriveSubsystem m_drivetrain;
+    private HoodSubsystem m_hood;
 
     // Request object to avoid allocation in loops
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
@@ -54,13 +55,16 @@ public class ShooterSubsystem extends SubsystemBase {
     private double MIN_RANGE = 0.5; // meters
 
     // FIRST VELOCITY, THEN RPM
-    // private double[][] leftShooterValues = {{6, 3100}, {6.73, 3450}, {7.72, 4000}};
-    // private double[][] centerShooterValues = {{6.26, 3900}, {6.73, 4100}, {7.72, 4900}}; //these are vel based
-    // private double[][] rightShooterValues = {{6.26, 3300}, {6.73, 3550}, {7.72, 4250}};
+    // private double[][] leftShooterValues = {{6, 3100}, {6.73, 3450}, {7.72,
+    // 4000}};
+    // private double[][] centerShooterValues = {{6.26, 3900}, {6.73, 4100}, {7.72,
+    // 4900}}; //these are vel based
+    // private double[][] rightShooterValues = {{6.26, 3300}, {6.73, 3550}, {7.72,
+    // 4250}};
 
-    private double[][] leftShooterValues = {{}};
-    private double[][] centerShooterValues = {{}}; //these are vel based
-    private double[][] rightShooterValues = {{}};
+    private double[][] leftShooterValues = { {} };
+    private double[][] centerShooterValues = { {} }; // these are vel based
+    private double[][] rightShooterValues = { {} };
 
     private double[] leftCoeffs;
     private double[] centerCoeffs;
@@ -78,10 +82,12 @@ public class ShooterSubsystem extends SubsystemBase {
     private boolean isShooting = false;
     private boolean isKicking = false;
 
-    public ShooterSubsystem(HopperSubsystem m_hopper, boolean isRed, DriveSubsystem m_drivetrain) {
+    public ShooterSubsystem(HopperSubsystem m_hopper, boolean isRed, DriveSubsystem m_drivetrain,
+            HoodSubsystem m_hood) {
 
         this.m_hopper = m_hopper;
         this.m_drivetrain = m_drivetrain;
+        this.m_hood = m_hood;
 
         left = new TalonFX(31);
         center = new TalonFX(32);
@@ -141,7 +147,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         this.isRed = isRed;
 
-        //calculateShooterCurves();
+        // calculateShooterCurves();
     }
 
     private void calculateShooterCurves() {
@@ -224,22 +230,35 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     /**
-     * 2.48 meters away
-     */
-    public void shoot1() {
-        targetRpmCenter = 4100;
-        targetRpmLeft = 3500;
-        targetRpmRight = 3500;
-    }
-
-    /**
      * 1.65 meters away
      */
-    public void shoot2() {
+    public void shoot165() {
         targetRpmLeft = 3100;
         targetRpmCenter = 3700;
         targetRpmRight = 3100;
+        m_hood.positionCommand(0.2);
     }
+
+    /**
+     * 2.5 meters away
+     */
+    public void shoot250() {
+        targetRpmLeft = 3500;
+        targetRpmCenter = 4100;
+        targetRpmRight = 3500;
+        m_hood.positionCommand(0.2);
+    }
+
+    /**
+     * 3.5 meters away
+     */
+    public void shoot350() {
+        targetRpmLeft = 3650;
+        targetRpmCenter = 4400;
+        targetRpmRight = 3750;
+        m_hood.positionCommand(0.5);
+    }
+
 
     public void autoShoot() {
         System.out.println("AUTOSHOOTING: " + autoShooting);
@@ -250,6 +269,21 @@ public class ShooterSubsystem extends SubsystemBase {
             autoShooting = true;
             CommandScheduler.getInstance().schedule(existingAutoShootCommand);
         }
+    }
+
+    public Command runShooterBack() {
+        return new FunctionalCommand(
+            () -> {
+                rotate(-500, -500, -500);
+            },
+            () -> {
+                rotate(-500, -500, -500);
+            },
+            interrupted -> {
+                isVelocityWithinTolerance();
+            },
+            () -> false,
+            this);
     }
 
     public void setSelected(Side side) {
@@ -459,6 +493,18 @@ public class ShooterSubsystem extends SubsystemBase {
         return isKicking;
     }
 
+    public double getDistToHub() {
+        Translation2d absoluteTargetTranslation = getAbsoluteTranslation(isRed);
+
+        double delta_x = absoluteTargetTranslation.getX() - m_drivetrain.getRobotX();
+        double delta_y = absoluteTargetTranslation.getY() - m_drivetrain.getRobotY();
+
+        double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y); // add 0.24m to account for pigeon to shooter
+                                                                       // distance TODO
+        
+        return hyp;
+    }
+
     double storedLeftRPM;
     double storedCenterRPM;
     double storedRightRPM;
@@ -480,25 +526,58 @@ public class ShooterSubsystem extends SubsystemBase {
             double delta_x = absoluteTargetTranslation.getX() - m_drivetrain.getRobotX();
             double delta_y = absoluteTargetTranslation.getY() - m_drivetrain.getRobotY();
 
-            double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y) + 0.24; // add 0.24m to account for pigeon to shooter distance
+            double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y); // add 0.24m to account for pigeon to shooter
+                                                                           // distance TODO
 
             if (hyp < MIN_RANGE) {
                 return;
             }
 
-            ChassisSpeeds speeds = m_drivetrain.getCurrentRobotChassisSpeeds(); // check if needs to be made into robo
-                                                                                // rel, idk what default is
+            // ChassisSpeeds speeds = m_drivetrain.getCurrentRobotChassisSpeeds(); // check
+            // if needs to be made into robo TODO
+            // // rel, idk what default is
 
-            double neededVel = Ballistics.CalculateNeededShooterSpeed(hyp, speeds.vxMetersPerSecond,
-                    speeds.vyMetersPerSecond);
+            // double neededVel = Ballistics.CalculateNeededShooterSpeed(hyp,
+            // speeds.vxMetersPerSecond,
+            // speeds.vyMetersPerSecond);
 
-            double neededLeftRPM = getValueFromCurve(neededVel, leftCoeffs);
-            double neededCenterRPM = getValueFromCurve(neededVel, centerCoeffs);
-            double neededRightRPM = getValueFromCurve(neededVel, rightCoeffs);
+            // double neededLeftRPM = getValueFromCurve(neededVel, leftCoeffs);
+            // double neededCenterRPM = getValueFromCurve(neededVel, centerCoeffs);
+            // double neededRightRPM = getValueFromCurve(neededVel, rightCoeffs);
 
-            targetRpmLeft = neededLeftRPM;
-            targetRpmCenter = neededCenterRPM;
-            targetRpmRight = neededRightRPM;
+            double minRange = 1.5;
+            double maxRange = 7;
+            double step = 0.5;
+            double val = 0;
+
+            for (double i = minRange; i < maxRange; i += step) {
+                val++;
+                if (Math.abs(i - hyp) <= 0.25) {
+                    break;
+                }
+            }
+
+            if (val == 1) {
+                shoot165();
+            }
+            else if (val == 2) {
+                //shoot200();
+            }
+            else if (val == 3) {
+                shoot250();
+            }
+            else if (val == 4) {
+                //shoot300();
+                //m_hood.positionCommand(0.2);
+            }
+            else if (val == 5) {
+                // shoot350();
+                // m_hood.positionCommand(0.2);
+            }
+
+            // targetRpmLeft = neededLeftRPM; TODO
+            // targetRpmCenter = neededCenterRPM;
+            // targetRpmRight = neededRightRPM;
         } else {
             isFirstCycleAuto = true;
         }

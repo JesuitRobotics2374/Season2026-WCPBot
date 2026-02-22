@@ -21,15 +21,15 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class HoodSubsystem extends SubsystemBase {
     private static final Distance kServoLength = Millimeters.of(100);
     private static final LinearVelocity kMaxServoSpeed = Millimeters.of(20).per(Second);
-    private static final double kMinPosition = 0.01;
-    private static final double kMaxPosition = 0.77;
-    private static final double kPositionTolerance = 0.01;
+    private static final double kMinPosition = 0.1;
+    private static final double kMaxPosition = 0.7;
+    private static final double kPositionTolerance = 0.02;
 
     private final Servo leftServo;
     private final Servo rightServo;
 
-    private double currentPosition = 0.5;
-    private double targetPosition = 0.5;
+    private double currentPosition = 0.2;
+    private double targetPosition = 0.2;
     private Time lastUpdateTime = Seconds.of(0);
 
     public HoodSubsystem() {
@@ -42,8 +42,8 @@ public class HoodSubsystem extends SubsystemBase {
     }
 
     /** Expects a position between 0.0 and 1.0 */
-    public void setPosition(double position) {
-        final double clampedPosition = MathUtil.clamp(position, kMinPosition, kMaxPosition);
+    private void setPosition(double position) {
+        double clampedPosition = MathUtil.clamp(position, kMinPosition, kMaxPosition);
         leftServo.set(clampedPosition);
         rightServo.set(clampedPosition);
         targetPosition = clampedPosition;
@@ -69,6 +69,7 @@ public class HoodSubsystem extends SubsystemBase {
         lastUpdateTime = currentTime;
 
         if (isPositionWithinTolerance()) {
+            //System.out.println("within tol");
             currentPosition = targetPosition;
             return;
         }
