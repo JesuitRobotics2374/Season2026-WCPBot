@@ -169,9 +169,9 @@ public class Core {
         operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
         operatorController.rightTrigger().onTrue(new InstantCommand(() ->
-        m_shooter.increaseSelectedTarget(50)));
+        m_shooter.increaseSelectedTarget(100)));
         operatorController.leftTrigger().onTrue(new InstantCommand(() ->
-        m_shooter.decreaseSelectedTarget(50)));
+        m_shooter.decreaseSelectedTarget(100)));
 
         operatorController.povRight().onTrue(new InstantCommand(() ->
         m_shooter.setSelected(Side.RIGHT)));
