@@ -20,6 +20,8 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean raised;
   private boolean lowered;
 
+  private double targetSpeed = -0.8;
+
   private static final double CURRENT_LIMIT = 25.0; // Amps
 
   private boolean isIntaking;
@@ -86,6 +88,18 @@ public class IntakeSubsystem extends SubsystemBase {
   //       this);
   // }
 
+  public double getTargetSpeed() {
+    return targetSpeed;
+  }
+
+  public void increaseTargetSpeed(double delta) {
+    targetSpeed += -Math.abs(delta);
+  }
+
+  public void decreaseTargetSpeed(double delta) {
+    targetSpeed += Math.abs(delta);
+  }
+
   public void intake() {
     if (isIntaking) {
       isIntaking = false;
@@ -93,7 +107,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
     else {
       isIntaking = true;
-      intakeMotor.set(-0.8);
+      intakeMotor.set(targetSpeed);
     }
   }
 

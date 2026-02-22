@@ -109,6 +109,8 @@ public class Core {
         tab.addBoolean("Rolling", () -> m_hopper.isRolling());
         tab.addBoolean("Intaking", () -> m_intake.isIntaking());
 
+        tab.addDouble("Intake Speed", () -> m_intake.getTargetSpeed());
+
         tab.addDouble("drive limit", () -> m_powerManager.getDriveLimit());
         tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
 
@@ -202,6 +204,9 @@ public class Core {
         // INTAKE
 
         operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));
+
+        operatorController.povLeft().onTrue(new InstantCommand(() -> m_intake.decreaseTargetSpeed(0.1)));
+        operatorController.povRight().onTrue(new InstantCommand(() -> m_intake.increaseTargetSpeed(0.1)));
 
         operatorController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
         operatorController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
