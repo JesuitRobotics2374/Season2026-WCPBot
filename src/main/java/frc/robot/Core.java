@@ -9,14 +9,19 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SelectCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.subsystems.drivetrain.TunerConstants;
@@ -30,6 +35,7 @@ import frc.robot.subsystems.HopperSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.PowerManagement;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.Side;
 
 public class Core {
     private double MaxSpeed = 0.5 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
@@ -57,9 +63,9 @@ public class Core {
 
     public final IntakeSubsystem m_intake = new IntakeSubsystem();
     public final HopperSubsystem m_hopper = new HopperSubsystem();
-    public final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper);
     public final ClimberSubsystem m_climber = new ClimberSubsystem();
     public final HoodSubsystem m_hood = new HoodSubsystem();
+    public final ShooterSubsystem m_shooter = new ShooterSubsystem(m_hopper, DriverStation.getAlliance().get().equals(Alliance.Red), drivetrain, m_hood);
 
     public final VisionSubsystem m_vision = new VisionSubsystem();
     public final PowerManagement m_powerManager = new PowerManagement(drivetrain, m_climber, m_hopper, m_intake,
@@ -69,7 +75,7 @@ public class Core {
     private final SlewRateLimiter yRateLimiter = new SlewRateLimiter(TranslationalAccelerationLimit);
     private final SlewRateLimiter omegaRateLimiter = new SlewRateLimiter(RotationalAccelerationLimit);
 
-    private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, false);
+    private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, DriverStation.getAlliance().get().equals(Alliance.Red));
     private boolean yawHubAlign = false;
 
     public Core() {
@@ -104,6 +110,13 @@ public class Core {
 
         tab.addDouble("drive limit", () -> m_powerManager.getDriveLimit());
         tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
+
+        tab.addDouble("drive pos x", () -> drivetrain.getRobotX());
+         tab.addDouble("drive pos y", () -> drivetrain.getRobotY());
+
+         tab.addDouble("hood pos", () -> m_hood.getCurrentPos());
+
+         tab.addDouble("dist to hub", () -> m_shooter.getDistToHub());
     }
 
     private double shooterDampen() {
@@ -155,19 +168,19 @@ public class Core {
         operatorController.rightBumper().onTrue(new InstantCommand(() -> m_shooter.increaseTargetRpm(100)));
         operatorController.leftBumper().onTrue(new InstantCommand(() -> m_shooter.decreaseTargetRpm(100)));
 
-        // operatorController.rightTrigger().onTrue(new InstantCommand(() ->
-        // m_shooter.increaseSelectedTarget(100)));
-        // operatorController.leftTrigger().onTrue(new InstantCommand(() ->
-        // m_shooter.decreaseSelectedTarget(100)));
+        operatorController.rightTrigger().onTrue(new InstantCommand(() ->
+        m_shooter.increaseSelectedTarget(50)));
+        operatorController.leftTrigger().onTrue(new InstantCommand(() ->
+        m_shooter.decreaseSelectedTarget(50)));
 
-        // operatorController.povRight().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.RIGHT)));
-        // operatorController.povUp().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.CENTER)));
-        // operatorController.povLeft().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.LEFT)));
-        // operatorController.povDown().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.KICKER)));
+        operatorController.povRight().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.RIGHT)));
+        operatorController.povUp().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.CENTER)));
+        operatorController.povLeft().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.LEFT)));
+        operatorController.povDown().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.KICKER)));
 
         // operatorController.y().onTrue(new InstantCommand(() ->
         // m_shooter.rotateAtCached()));
@@ -176,9 +189,13 @@ public class Core {
         // m_shooter.rotateKicker()));
 
         operatorController.y().onTrue(new InstantCommand(() -> m_shooter.autoShoot()));
+        
+        operatorController.b().onTrue(new InstantCommand(() -> m_shooter.shoot165()));
+        operatorController.x().onTrue(new InstantCommand(() -> m_shooter.shoot250()));
+        
 
-        operatorController.rightTrigger().onTrue(m_hood.changePosition(0.1));
-        operatorController.leftTrigger().onTrue(m_hood.changePosition(-0.1));
+        operatorController.back().onTrue(m_hood.positionCommand(0.2));
+        operatorController.start().onTrue(m_hood.positionCommand(0.5));
 
         // INTAKE
 
@@ -189,8 +206,8 @@ public class Core {
 
         // CLIMBER
 
-        driveController.rightBumper().onTrue(m_climber.extendArm());
-        driveController.leftBumper().onTrue(m_climber.retractArm());
+        // driveController.rightBumper().onTrue(m_climber.extendArm());
+        // driveController.leftBumper().onTrue(m_climber.retractArm());
 
         driveController.x().whileTrue(m_climber.rotateCommand(-0.3));
         driveController.y().whileTrue(m_climber.rotateCommand(0.3));
