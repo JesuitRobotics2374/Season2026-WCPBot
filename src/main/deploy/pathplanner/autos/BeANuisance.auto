@@ -11,9 +11,21 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "Start Intake"
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "Nuisance"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Stop Intake"
           }
         }
       ]

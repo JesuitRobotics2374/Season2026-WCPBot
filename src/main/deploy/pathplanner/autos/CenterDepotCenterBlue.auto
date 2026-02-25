@@ -5,28 +5,63 @@
     "data": {
       "commands": [
         {
-          "type": "sequential",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "CenterStartToCenterBlue"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "CenterToDepotBlue"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "DepotToCenterBlue"
-                }
-              }
-            ]
+            "pathName": "CenterStartToCenterBlue"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CenterToDepotBlue"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Start Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Intake Blue Depot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Stop Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "DepotToCenterBlue"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Start Shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 10.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Stop Shoot"
           }
         }
       ]

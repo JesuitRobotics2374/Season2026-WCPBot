@@ -3,16 +3,16 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.215022222222223,
+        "x": 0.6491298145506419,
         "y": 5.94491111111111
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.7838777777777786,
+        "x": 2.217985370106198,
         "y": 6.061844444444444
       },
       "isLocked": false,
-      "linkedName": "DepotBlue"
+      "linkedName": "DepotBlueIn"
     },
     {
       "anchor": {
