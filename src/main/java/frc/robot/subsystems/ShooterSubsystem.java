@@ -50,7 +50,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private static final double CURRENT_LIMIT = 30.0; // Amps
     private static final double KICKER_CURRENT_LIMIT = 60; // Amps
 
-    private boolean doAutoShoot = false; // enabled by default
+    private boolean doAutoShoot = true; // enabled by default
     private boolean isRed;
     private double MIN_RANGE = 0.5; // meters
 
@@ -62,9 +62,15 @@ public class ShooterSubsystem extends SubsystemBase {
     // private double[][] rightShooterValues = {{6.26, 3300}, {6.73, 3550}, {7.72,
     // 4250}};
 
-    private double[][] leftShooterValues = { {} };
-    private double[][] centerShooterValues = { {} }; // these are vel based
-    private double[][] rightShooterValues = { {} };
+    // distance, then hood pos, then rpms (LCR, kicker)
+    private double[][] values = { { 1.35, 0.2, 2800, 3500, 2900, 1800 },
+            { 1.65, 0.2, 3000, 3800, 3100, 1800 },
+            { 2.00, 0.2, 3200, 4000, 3300, 1800 },
+            { 2.48, 0.5, 3500, 4100, 3500, 2000 },
+            { 3.00, 0.5, 3400, 4200, 3600, 1800 },
+            { 3.50, 0.5, 3700, 4500, 3800, 1800 },
+            // { 3.83, 0.5, 3500, 4300, 3500, 1800 } NOT 90% ACCURACY, NOT CONSIDERED
+    };
 
     private double[] leftCoeffs;
     private double[] centerCoeffs;
@@ -150,40 +156,40 @@ public class ShooterSubsystem extends SubsystemBase {
         // calculateShooterCurves();
     }
 
-    private void calculateShooterCurves() {
-        WeightedObservedPoints leftPoints = new WeightedObservedPoints();
-        for (int i = 0; i < leftShooterValues.length; i++) {
-            double[] values = leftShooterValues[i];
+    // private void calculateShooterCurves() {
+    // WeightedObservedPoints leftPoints = new WeightedObservedPoints();
+    // for (int i = 0; i < leftShooterValues.length; i++) {
+    // double[] values = leftShooterValues[i];
 
-            leftPoints.add(values[0], values[1]);
-        }
+    // leftPoints.add(values[0], values[1]);
+    // }
 
-        // Fit cubic polynomial
-        PolynomialCurveFitter leftFitter = PolynomialCurveFitter.create(3);
-        leftCoeffs = leftFitter.fit(leftPoints.toList());
+    // // Fit cubic polynomial
+    // PolynomialCurveFitter leftFitter = PolynomialCurveFitter.create(3);
+    // leftCoeffs = leftFitter.fit(leftPoints.toList());
 
-        WeightedObservedPoints centerPoints = new WeightedObservedPoints();
-        for (int i = 0; i < centerShooterValues.length; i++) {
-            double[] values = centerShooterValues[i];
+    // WeightedObservedPoints centerPoints = new WeightedObservedPoints();
+    // for (int i = 0; i < centerShooterValues.length; i++) {
+    // double[] values = centerShooterValues[i];
 
-            centerPoints.add(values[0], values[1]);
-        }
+    // centerPoints.add(values[0], values[1]);
+    // }
 
-        // Fit cubic polynomial
-        PolynomialCurveFitter centerFitter = PolynomialCurveFitter.create(3);
-        centerCoeffs = centerFitter.fit(centerPoints.toList());
+    // // Fit cubic polynomial
+    // PolynomialCurveFitter centerFitter = PolynomialCurveFitter.create(3);
+    // centerCoeffs = centerFitter.fit(centerPoints.toList());
 
-        WeightedObservedPoints rightPoints = new WeightedObservedPoints();
-        for (int i = 0; i < rightShooterValues.length; i++) {
-            double[] values = rightShooterValues[i];
+    // WeightedObservedPoints rightPoints = new WeightedObservedPoints();
+    // for (int i = 0; i < rightShooterValues.length; i++) {
+    // double[] values = rightShooterValues[i];
 
-            rightPoints.add(values[0], values[1]);
-        }
+    // rightPoints.add(values[0], values[1]);
+    // }
 
-        // Fit cubic polynomial
-        PolynomialCurveFitter rightFitter = PolynomialCurveFitter.create(3);
-        rightCoeffs = rightFitter.fit(rightPoints.toList());
-    }
+    // // Fit cubic polynomial
+    // PolynomialCurveFitter rightFitter = PolynomialCurveFitter.create(3);
+    // rightCoeffs = rightFitter.fit(rightPoints.toList());
+    // }
 
     public boolean isVelocityWithinTolerance() {
         double tolerancePercent = 0.05; // 5%
@@ -259,7 +265,6 @@ public class ShooterSubsystem extends SubsystemBase {
         m_hood.positionCommand(0.5);
     }
 
-
     public void autoShoot() {
         System.out.println("AUTOSHOOTING: " + autoShooting);
         if (autoShooting) {
@@ -273,17 +278,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public Command runShooterBack() {
         return new FunctionalCommand(
-            () -> {
-                rotate(-500, -500, -500);
-            },
-            () -> {
-                rotate(-500, -500, -500);
-            },
-            interrupted -> {
-                isVelocityWithinTolerance();
-            },
-            () -> false,
-            this);
+                () -> {
+                    rotate(-500, -500, -500);
+                },
+                () -> {
+                    rotate(-500, -500, -500);
+                },
+                interrupted -> {
+                    isVelocityWithinTolerance();
+                },
+                () -> false,
+                this);
     }
 
     public void setSelected(Side side) {
@@ -499,9 +504,8 @@ public class ShooterSubsystem extends SubsystemBase {
         double delta_x = absoluteTargetTranslation.getX() - m_drivetrain.getRobotX();
         double delta_y = absoluteTargetTranslation.getY() - m_drivetrain.getRobotY();
 
-        double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y); // add 0.24m to account for pigeon to shooter
-                                                                       // distance TODO
-        
+        double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
+
         return hyp;
     }
 
@@ -521,17 +525,7 @@ public class ShooterSubsystem extends SubsystemBase {
                 isFirstCycleAuto = false;
             }
 
-            Translation2d absoluteTargetTranslation = getAbsoluteTranslation(isRed);
-
-            double delta_x = absoluteTargetTranslation.getX() - m_drivetrain.getRobotX();
-            double delta_y = absoluteTargetTranslation.getY() - m_drivetrain.getRobotY();
-
-            double hyp = Math.sqrt(delta_x * delta_x + delta_y * delta_y); // add 0.24m to account for pigeon to shooter
-                                                                           // distance TODO
-
-            if (hyp < MIN_RANGE) {
-                return;
-            }
+            double dist = getDistToHub();
 
             // ChassisSpeeds speeds = m_drivetrain.getCurrentRobotChassisSpeeds(); // check
             // if needs to be made into robo TODO
@@ -545,39 +539,7 @@ public class ShooterSubsystem extends SubsystemBase {
             // double neededCenterRPM = getValueFromCurve(neededVel, centerCoeffs);
             // double neededRightRPM = getValueFromCurve(neededVel, rightCoeffs);
 
-            double minRange = 1.5;
-            double maxRange = 7;
-            double step = 0.5;
-            double val = 0;
-
-            for (double i = minRange; i < maxRange; i += step) {
-                val++;
-                if (Math.abs(i - hyp) <= 0.25) {
-                    break;
-                }
-            }
-
-            if (val == 1) {
-                shoot165();
-            }
-            else if (val == 2) {
-                //shoot200();
-            }
-            else if (val == 3) {
-                shoot250();
-            }
-            else if (val == 4) {
-                //shoot300();
-                //m_hood.positionCommand(0.2);
-            }
-            else if (val == 5) {
-                // shoot350();
-                // m_hood.positionCommand(0.2);
-            }
-
-            // targetRpmLeft = neededLeftRPM; TODO
-            // targetRpmCenter = neededCenterRPM;
-            // targetRpmRight = neededRightRPM;
+            applyBestSettingsForDistance(dist);
         } else {
             isFirstCycleAuto = true;
         }
@@ -589,6 +551,38 @@ public class ShooterSubsystem extends SubsystemBase {
         } else {
             return new Translation2d(4.625594, 4.034536);
         }
+    }
+
+    /**
+     * Automatically selects the closest calibrated point
+     * and applies hood + all RPM targets.
+     */
+    private void applyBestSettingsForDistance(double distanceMeters) {
+
+        if (values.length == 0) {
+            return;
+        }
+
+        double[] closestRow = values[0];
+        double smallestError = Math.abs(distanceMeters - values[0][0]);
+
+        for (int i = 1; i < values.length; i++) {
+            double error = Math.abs(distanceMeters - values[i][0]);
+
+            if (error < smallestError) {
+                smallestError = error;
+                closestRow = values[i];
+            }
+        }
+
+        // Apply hood
+        m_hood.positionCommand(closestRow[1]);
+
+        // Apply RPM targets
+        setTargetRpmLeft(closestRow[2]);
+        setTargetRpmCenter(closestRow[3]);
+        setTargetRpmRight(closestRow[4]);
+        setTargetRpmKicker(closestRow[5]);
     }
 
     private double getValueFromCurve(double xPoint, double[] coeffs) {
