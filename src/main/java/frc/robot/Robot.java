@@ -27,6 +27,8 @@ public class Robot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
+        m_core.drivetrain.passGlobalEstimates(m_core.m_vision.getGlobalFieldPoses());
+
         CommandScheduler.getInstance().run(); 
     }
 
@@ -41,11 +43,11 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_core.getAutonomousCommand();
+        // m_autonomousCommand = m_core.getAutonomousCommand();
 
-        if (m_autonomousCommand != null) {
-            CommandScheduler.getInstance().schedule(m_autonomousCommand);
-        }
+        // if (m_autonomousCommand != null) {
+        //     CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        // }
     }
 
     @Override

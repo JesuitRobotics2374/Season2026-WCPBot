@@ -1,6 +1,9 @@
 package frc.robot.utils;
 
 import org.apache.commons.math4.legacy.fitting.WeightedObservedPoints;
+
+import javax.sound.sampled.SourceDataLine;
+
 import org.apache.commons.math4.legacy.fitting.PolynomialCurveFitter;
 
 public class Ballistics {
@@ -21,8 +24,8 @@ public class Ballistics {
     private static double time; // seconds (s)
 
     // Other constants
-    private static final double deltaH = 1; // meters (m)
-    private static final double lambda = 45 * (Math.PI) / 180; // radians (rad)
+    private static final double deltaH = 0.4892; // meters (m)
+    private static final double lambda = 55 * (Math.PI) / 180; // radians (rad)
 
     private static final double m = 0.215; // kilograms (kg)
     private static final double g = -9.8; // meters per second squared (m/s^2)
@@ -184,7 +187,16 @@ public class Ballistics {
 
     public static void main(String[] args) {
 
-        System.out.println(CalculateNeededShooterSpeed(5, 2, 3));
+        double hubX = 4.625594;
+        double roboX = 1;
+
+        double hubY = 4.034356;
+        double roboY = 6.9;
+
+        double dist = Math.sqrt(Math.pow(hubX - roboX, 2) + Math.pow(hubY - roboY, 2)) + 0.24;
+
+        System.out.println(CalculateNeededShooterSpeed(dist, 0, 0));
+        // System.out.println(CalculateNeededShooterSpeed(5, 2, 3));
 
         // double ViMin = 5; // minimum initial velocity (m/s)
         // double ViMax = 15; // maximum initial velocity (m/s)
@@ -229,5 +241,6 @@ public class Ballistics {
         // System.out.println("x for estimated vi: " + calculateX(ViEstimate));
 
         // System.out.println(calculateY(ViEstimate, 1));
+        // }
     }
 }

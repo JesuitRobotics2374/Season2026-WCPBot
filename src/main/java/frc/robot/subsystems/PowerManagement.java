@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.Constants;
 import frc.robot.subsystems.drivetrain.DriveSubsystem;
@@ -16,14 +19,8 @@ public class PowerManagement extends SubsystemBase {
   private ShooterSubsystem shooter;
   private DriveSubsystem drivetrain;
 
-  private double climberSupplyCurrent;
-  private double intakeSupplyCurrent;
-  private double hopperSupplyCurrent;
-  private double shooterSupplyCurrent;
-
-  private double drivetrainSupplyCurrent;
-
-  private final double maxCurrent;
+  private double driveLimit;
+  private double steerLimit;
 
   /** Creates a new PowerManagementSubsystem. */
   public PowerManagement(DriveSubsystem drivetrain, ClimberSubsystem climber, HopperSubsystem hopper,
@@ -34,56 +31,77 @@ public class PowerManagement extends SubsystemBase {
     this.shooter = shooter;
     this.drivetrain = drivetrain;
 
-    maxCurrent = Constants.MAX_CURRENT;
+    driveLimit = Constants.DEFAULT_DRIVE_CURRENT;
+    steerLimit = Constants.DEFAULT_STEER_CURRENT;
+
+    drivetrain.setDriveCurrentLimit(driveLimit, driveLimit / 0.65);
+    drivetrain.setSteerCurrentLimit(steerLimit, steerLimit / 0.65);
+
+    System.out.println("Power Management Initialized");
+  }
+
+  public double getSteerLimit() {
+    return steerLimit;
+  }
+
+  public double getDriveLimit() {
+    return driveLimit;
+  }
+
+  private boolean lastShooting = false;
+  private boolean lastIntaking = false;
+
+  double clock = 0;
+
+  private void asyncUpdateLimits() {
+    Command asyncUpdateLimitsCommand =  new InstantCommand(() -> {
+      drivetrain.setDriveCurrentLimit(driveLimit, driveLimit / 0.65);
+      drivetrain.setSteerCurrentLimit(steerLimit, steerLimit / 0.65);
+    });
+    CommandScheduler.getInstance().schedule(asyncUpdateLimitsCommand);
   }
 
   @Override
   public void periodic() {
-    climberSupplyCurrent = climber.getClimberSupplyCurrent();
-    intakeSupplyCurrent = intake.getIntakeSupplyCurrent();
-    hopperSupplyCurrent = hopper.getHopperSupplyCurrent();
-    shooterSupplyCurrent = shooter.getShooterSupplyCurrent();
+    clock++;
+    if (clock == 10) {
+      clock = 0;
+      //System.out.println("ran periodic");
+    }
+  
 
-    drivetrainSupplyCurrent = drivetrain.getTotalDriveSupplyCurrent();
+    boolean currentShooting = shooter.isShooting();
+    boolean currentIntaking = intake.isIntaking();
 
-    // FOR NOW (speculative values)
-    if (!climber.hasReachedMax() || !climber.hasReachedMin()
-        || !climber.hasReachedMax() && !climber.hasReachedMin() && shooter.isRunning(shooterSupplyCurrent)) {
-      drivetrain.setDriveCurrentLimit(40); // Lowest limit because demand is highest
+    // Only continue if something changed
+    if (currentShooting == lastShooting &&
+        currentIntaking == lastIntaking) {
+      return; // Nothing changed → skip config entirely
     }
-    // Check shooter and climber, I dont think we should reduce power to drive when
-    // intake is on
-    else if (shooter.isRunning(shooterSupplyCurrent)) {
-      drivetrain.setDriveCurrentLimit(45);
-    } else if (!climber.hasReachedMax() || !climber.hasReachedMin()
-        || !climber.hasReachedMax() && !climber.hasReachedMin()) {
-      drivetrain.setDriveCurrentLimit(45);
-    }
-    // If nothing else is happening
-    else {
-      drivetrain.setDriveCurrentLimit(50); // Max speed whilst only drive is running
-    }
-    // for steerMotor
-    if (!climber.hasReachedMax() || !climber.hasReachedMin()
-        || !climber.hasReachedMax() && !climber.hasReachedMin() && shooter.isRunning(shooterSupplyCurrent)) {
-      // Lowest power if both climber and shooter are enabled
-      drivetrain.setSteerCurrentLimit(20);
-    } else if (shooter.isRunning(shooterSupplyCurrent)) {
-      // Just the shooter is on
-      drivetrain.setSteerCurrentLimit(25);
-    } else if (climber.hasReachedMax() || climber.hasReachedMin()
-        || !climber.hasReachedMax() && !climber.hasReachedMin()) {
-      // Just the climber is on
-      drivetrain.setSteerCurrentLimit(25);
+
+    System.out.println("changing configs");
+
+    // Update stored states
+    lastShooting = currentShooting;
+    lastIntaking = currentIntaking;
+
+    // Determine limits
+    if (currentShooting && currentIntaking) {
+      driveLimit = 20;
+      steerLimit = 10;
+    } else if (currentShooting) {
+      driveLimit = 25;
+      steerLimit = 15;
+    } else if (currentIntaking) {
+      driveLimit = 30;
+      steerLimit = 20;
     } else {
-      // Max steering speed if nothing else is on
-      drivetrain.setSteerCurrentLimit(30);
+      driveLimit = Constants.DEFAULT_DRIVE_CURRENT;
+      steerLimit = Constants.DEFAULT_STEER_CURRENT;
     }
 
-    drivetrain.setDriveCurrentLimit(
-        Math.min(160, (maxCurrent - shooterSupplyCurrent - intakeSupplyCurrent - hopperSupplyCurrent) * 0.66));
-    drivetrain.setSteerCurrentLimit(
-        Math.min(80, (maxCurrent - shooterSupplyCurrent - intakeSupplyCurrent - hopperSupplyCurrent) * 0.34));
-
+    // Apply config ONLY when state changed
+    asyncUpdateLimits();
   }
+
 }

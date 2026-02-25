@@ -38,25 +38,28 @@ public class HopperSubsystem extends SubsystemBase {
     }
     else {
       rolling = true;
-      rollerMotor.set(0.5);
+      rollerMotor.set(0.4);
     }
   }
 
   public void startRoll() {
-    rolling = true;
-      rollerMotor.set(0.5);
+    rollerMotor.set(0.4);
   }
 
   public Command purge() {
     rolling = false;
     pulsing = false;
-    return new InstantCommand(() -> rollerMotor.set(-0.5));
+    return new InstantCommand(() -> rollerMotor.set(-0.4));
   }
 
   public Command stop() {
     rolling = false;
     pulsing = false;
     return new InstantCommand(() -> rollerMotor.stopMotor());
+  }
+
+  public void stop2() {
+    rollerMotor.stopMotor();
   }
 
   public Command pulse() {
@@ -73,7 +76,7 @@ public class HopperSubsystem extends SubsystemBase {
         () -> {
           // Pulse logic: 0.4s ON, 0.2s OFF (Total 0.6s cycle)
           if ((timer.get() % 0.6) < 0.4) {
-            rollerMotor.set(0.5);
+            rollerMotor.set(0.4);
           } else {
             rollerMotor.set(-0.4);
           }
