@@ -576,7 +576,7 @@ public class ShooterSubsystem extends SubsystemBase {
         }
 
         // Apply hood
-        m_hood.positionCommand(closestRow[1]);
+        m_hood.setPosition(closestRow[1]);
 
         // Apply RPM targets
         setTargetRpmLeft(closestRow[2]);

@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class HoodSubsystem extends SubsystemBase {
     private static final Distance kServoLength = Millimeters.of(100);
-    private static final LinearVelocity kMaxServoSpeed = Millimeters.of(50).per(Second);
+    private static final LinearVelocity kMaxServoSpeed = Millimeters.of(80).per(Second);
     private static final double kMinPosition = 0.1;
     private static final double kMaxPosition = 0.7;
     private static final double kPositionTolerance = 0.02;
