@@ -247,7 +247,7 @@ public class Core {
 
     public Command getAutonomousCommand() {
         // Simple drive forward auton
-        return new PathPlannerAuto("RightCenterHPSCenter");
+        return new PathPlannerAuto("GetOutTheWay");
     }
 
     private double getGlobalSlowMode() {
