@@ -187,14 +187,14 @@ public class Core {
         operatorController.leftTrigger().onTrue(new InstantCommand(() ->
         m_shooter.decreaseSelectedTarget(100)));
 
-        // operatorController.povRight().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.RIGHT)));
-        // operatorController.povUp().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.CENTER)));
-        // operatorController.povLeft().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.LEFT)));
-        // operatorController.povDown().onTrue(new InstantCommand(() ->
-        // m_shooter.setSelected(Side.KICKER)));
+        operatorController.povRight().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.RIGHT)));
+        operatorController.povUp().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.CENTER)));
+        operatorController.povLeft().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.LEFT)));
+        operatorController.povDown().onTrue(new InstantCommand(() ->
+        m_shooter.setSelected(Side.KICKER)));
 
         // operatorController.y().onTrue(new InstantCommand(() ->
         // m_shooter.rotateAtCached()));
@@ -215,11 +215,11 @@ public class Core {
 
         operatorController.a().onTrue(new InstantCommand(() -> m_intake.intake()));
 
-        operatorController.povLeft().onTrue(new InstantCommand(() -> m_intake.decreaseTargetSpeed(0.1)));
-        operatorController.povRight().onTrue(new InstantCommand(() -> m_intake.increaseTargetSpeed(0.1)));
+        // operatorController.povLeft().onTrue(new InstantCommand(() -> m_intake.decreaseTargetSpeed(0.1)));
+        // operatorController.povRight().onTrue(new InstantCommand(() -> m_intake.increaseTargetSpeed(0.1)));
 
-        operatorController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
-        operatorController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
+        driveController.povUp().whileTrue(m_intake.raiseManual()).onFalse(m_intake.stopPivot());
+        driveController.povDown().whileTrue(m_intake.lowerManual()).onFalse(m_intake.stopPivot());
 
         // CLIMBER
 
