@@ -25,7 +25,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "LeftStartToLeftBlue"
+            "pathName": "RightStartToCenterBlue"
           }
         },
         {
@@ -43,43 +43,25 @@
         {
           "type": "named",
           "data": {
-            "name": "Stop Shoot"
+            "name": "Start Shoot"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "LeftToDepot"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Start Intake"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Intake Blue Depot"
+            "pathName": "CenterToHPS"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Stop Intake"
+            "waitTime": 5.0
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "DepotToCenterBlue"
+            "pathName": "HPS to Center"
           }
         },
         {
@@ -97,7 +79,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Stop Shoot"
+            "name": "Start Shoot"
           }
         }
       ]

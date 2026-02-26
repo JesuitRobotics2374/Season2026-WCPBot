@@ -38,10 +38,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
     private double targetRpm = 0.0;
-    private double targetRpmCenter = 4100;
-    private double targetRpmLeft = 3500;
+    private double targetRpmCenter = 3500;
+    private double targetRpmLeft = 4100;
     private double targetRpmRight = 3500;
-    private double targetRpmKicker = 2000;
+    private double targetRpmKicker = 1800;
 
     // Constants
     private static final double MAX_RPM = 6000.0;
@@ -199,7 +199,7 @@ public class ShooterSubsystem extends SubsystemBase {
         return leftReady && rightReady && centerReady;
     }
 
-    private void stopAll() {
+    public void stopAll() {
         kicker.stopMotor();
         center.stopMotor();
         left.stopMotor();
