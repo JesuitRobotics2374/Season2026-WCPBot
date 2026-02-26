@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -19,6 +20,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -81,7 +84,13 @@ public class Core {
     private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, DriverStation.getAlliance().get().equals(Alliance.Red));
     private boolean yawHubAlign = false;
 
+    private final SendableChooser<Command> autoChooser;
+
     public Core() {
+
+        autoChooser = AutoBuilder.buildAutoChooser();
+        SmartDashboard.putData("Auto Chooser", autoChooser);
+
         configureBindings();
         configureShuffleBoard();
 
@@ -247,7 +256,7 @@ public class Core {
 
     public Command getAutonomousCommand() {
         // Simple drive forward auton
-        return new PathPlannerAuto("GetOutTheWay");
+        return autoChooser.getSelected();
     }
 
     private double getGlobalSlowMode() {
