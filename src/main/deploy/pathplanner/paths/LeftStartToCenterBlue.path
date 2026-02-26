@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.917518370581709,
-        "y": 7.285554937391029
+        "x": 2.6154405928039313,
+        "y": 5.95056604850214
       },
       "isLocked": false,
       "linkedName": "LeftStartBlue"
     },
     {
       "anchor": {
-        "x": 2.2674222222222222,
-        "y": 5.944911111111111
+        "x": 2.355,
+        "y": 4.035
       },
       "prevControl": {
-        "x": 2.325888888888889,
-        "y": 6.3152
+        "x": 2.424397617955902,
+        "y": 4.71514614947732
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "LeftBlue"
+      "linkedName": "CenterBlue"
     }
   ],
   "rotationTargets": [],
@@ -33,13 +33,13 @@
   "pointTowardsZones": [
     {
       "fieldPosition": {
-        "x": 4.625,
-        "y": 4.025
+        "x": 4.625594,
+        "y": 4.034536
       },
       "rotationOffset": 0.0,
       "minWaypointRelativePos": 0.25,
       "maxWaypointRelativePos": 0.75,
-      "name": "BlueHub"
+      "name": "Hub"
     }
   ],
   "eventMarkers": [],
@@ -53,7 +53,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -38.40326170210579
+    "rotation": 0.0
   },
   "reversed": false,
   "folder": null,

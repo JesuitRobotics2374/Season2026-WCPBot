@@ -7,6 +7,8 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
@@ -82,6 +84,14 @@ public class Core {
     public Core() {
         configureBindings();
         configureShuffleBoard();
+
+        NamedCommands.registerCommand("Deploy Intake", m_intake.lowerManual());
+        NamedCommands.registerCommand("Stop Deploy", m_intake.stopPivot());
+        NamedCommands.registerCommand("Start Shoot", new InstantCommand(() -> m_shooter.autoShoot()));
+        NamedCommands.registerCommand("Stop Shoot", new InstantCommand(() -> m_shooter.stopAll()));
+        NamedCommands.registerCommand("Start Intake", new InstantCommand(() -> m_intake.intake()));
+        NamedCommands.registerCommand("Stop Intake", m_intake.stop());
+
     }
 
     public void configureShuffleBoard() {
@@ -237,18 +247,7 @@ public class Core {
 
     public Command getAutonomousCommand() {
         // Simple drive forward auton
-        final var idle = new SwerveRequest.Idle();
-        return Commands.sequence(
-                // Reset our field centric heading to match the robot
-                // facing away from our alliance station wall (0 deg).
-                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                // Then slowly drive forward (away from us) for 5 seconds.
-                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
-                        .withVelocityY(0)
-                        .withRotationalRate(0))
-                        .withTimeout(5.0),
-                // Finally idle for the rest of auton
-                drivetrain.applyRequest(() -> idle));
+        return new PathPlannerAuto("RightCenterHPSCenter");
     }
 
     private double getGlobalSlowMode() {

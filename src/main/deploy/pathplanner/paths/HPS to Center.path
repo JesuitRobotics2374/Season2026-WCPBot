@@ -3,45 +3,34 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.4826961483594863,
-        "y": 7.35376604850214
+        "x": 0.6361911554921535,
+        "y": 0.7032952924393738
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.917518370581709,
-        "y": 7.285554937391029
+        "x": 1.6324679029957196,
+        "y": 0.6515406562054205
       },
       "isLocked": false,
-      "linkedName": "LeftStartBlue"
+      "linkedName": "HPS"
     },
     {
       "anchor": {
-        "x": 2.2674222222222222,
-        "y": 5.944911111111111
+        "x": 2.355122222222222,
+        "y": 4.034999999999999
       },
       "prevControl": {
-        "x": 2.325888888888889,
-        "y": 6.3152
+        "x": 2.7969472182596284,
+        "y": 3.0840085592011417
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "LeftBlue"
+      "linkedName": "CenterBlue"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [],
-  "pointTowardsZones": [
-    {
-      "fieldPosition": {
-        "x": 4.625,
-        "y": 4.025
-      },
-      "rotationOffset": 0.0,
-      "minWaypointRelativePos": 0.25,
-      "maxWaypointRelativePos": 0.75,
-      "name": "BlueHub"
-    }
-  ],
+  "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
@@ -53,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -38.40326170210579
+    "rotation": 0.0
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 90.0
   },
   "useDefaultConstraints": true
 }

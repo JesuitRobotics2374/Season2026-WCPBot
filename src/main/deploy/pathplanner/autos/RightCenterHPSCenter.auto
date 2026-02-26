@@ -5,45 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "path",
-          "data": {
-            "pathName": "CenterStartToCenterBlue"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "CenterToDepotBlue"
-          }
-        },
-        {
           "type": "named",
           "data": {
-            "name": "Start Intake"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Intake Blue Depot"
+            "name": "Deploy Intake"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
+            "waitTime": 2.0
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Stop Intake"
+            "name": "Stop Deploy"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "DepotToCenterBlue"
+            "pathName": "RightStartToCenterBlue"
           }
         },
         {
@@ -55,13 +37,49 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 10.0
+            "waitTime": 5.0
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Stop Shoot"
+            "name": "Start Shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CenterToHPS"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 5.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "HPS to Center"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Start Shoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 8.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Start Shoot"
           }
         }
       ]
