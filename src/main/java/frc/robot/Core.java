@@ -84,12 +84,12 @@ public class Core {
     private final FixYawToHub fixYawToHub = new FixYawToHub(drivetrain, DriverStation.getAlliance().get().equals(Alliance.Red));
     private boolean yawHubAlign = false;
 
-    private final SendableChooser<Command> autoChooser;
+    // private final SendableChooser<Command> autoChooser;
 
     public Core() {
 
-        autoChooser = AutoBuilder.buildAutoChooser();
-        SmartDashboard.putData("Auto Chooser", autoChooser);
+        // autoChooser = AutoBuilder.buildAutoChooser();
+        // SmartDashboard.putData("Auto Chooser", autoChooser);
 
         configureBindings();
         configureShuffleBoard();
@@ -256,7 +256,7 @@ public class Core {
 
     public Command getAutonomousCommand() {
         // Simple drive forward auton
-        return autoChooser.getSelected();
+        return new PathPlannerAuto("BeANuisance");
     }
 
     private double getGlobalSlowMode() {
