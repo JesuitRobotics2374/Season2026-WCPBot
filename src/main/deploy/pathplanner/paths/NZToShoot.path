@@ -16,26 +16,26 @@
     },
     {
       "anchor": {
-        "x": 2.5381740370898713,
-        "y": 4.998930099857347
+        "x": 2.589928673323822,
+        "y": 5.244764621968616
       },
       "prevControl": {
-        "x": 3.3403708987161194,
-        "y": 6.422182596291013
+        "x": 3.39212553495007,
+        "y": 6.668017118402282
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "CenterBlue"
+      "linkedName": "LeftBlueShoot"
     }
   ],
   "rotationTargets": [],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.38622552329507076,
-      "maxWaypointRelativePos": 0.7292370020256582,
+      "minWaypointRelativePos": 0.39162727886563126,
+      "maxWaypointRelativePos": 0.6482106684672517,
       "constraints": {
-        "maxVelocity": 3.0,
+        "maxVelocity": 1.5,
         "maxAcceleration": 3.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -56,12 +56,12 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -28.886581766910727
+    "rotation": -30.417057670515895
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
-    "velocity": 0,
+    "velocity": 3.0,
     "rotation": 156.62629096150212
   },
   "useDefaultConstraints": true

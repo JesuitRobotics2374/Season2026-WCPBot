@@ -43,27 +43,41 @@
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "Start Intake"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "Start Intake"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Nuisance"
+                }
+              }
+            ]
           }
         },
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "Nuisance"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Stop Intake"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "NZToShoot"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "Stop Intake"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "NZToShoot"
+                }
+              }
+            ]
           }
         },
         {
