@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfigurator;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -20,9 +21,13 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean raised;
   private boolean lowered;
 
-  private double targetSpeed = -0.8;
+  private double targetRpm = -5700;
 
   private static final double CURRENT_LIMIT = 25.0; // Amps
+
+  private static final double RPM_TO_RPS = 1.0 / 60.0;
+
+  private final VelocityVoltage velocityRequest = new VelocityVoltage(0).withSlot(0);
 
   private boolean isIntaking;
 
@@ -37,10 +42,18 @@ public class IntakeSubsystem extends SubsystemBase {
     lowered = false;
 
     TalonFXConfiguration controlCfg = new TalonFXConfiguration();
-    controlCfg.CurrentLimits.SupplyCurrentLimitEnable = true;
+    controlCfg.CurrentLimits.SupplyCurrentLimitEnable = false;
     controlCfg.CurrentLimits.SupplyCurrentLimit = CURRENT_LIMIT;
-    controlCfg.CurrentLimits.StatorCurrentLimitEnable = true;
-    controlCfg.CurrentLimits.StatorCurrentLimit = CURRENT_LIMIT / 0.75;
+    controlCfg.CurrentLimits.StatorCurrentLimitEnable = false;
+    controlCfg.CurrentLimits.StatorCurrentLimit = CURRENT_LIMIT * 1.3;
+
+    controlCfg.Slot0.kP = 5;
+    controlCfg.Slot0.kI = 0;
+    controlCfg.Slot0.kD = 0.01;
+    controlCfg.Slot0.kV = 0.12; // ~12V
+    controlCfg.Slot0.kS = 0.1;
+
+    intakeMotor.getConfigurator().apply(controlCfg);
 
   }
 
@@ -88,26 +101,27 @@ public class IntakeSubsystem extends SubsystemBase {
   //       this);
   // }
 
-  public double getTargetSpeed() {
-    return targetSpeed;
+  public double getTargetRpm() {
+    return targetRpm;
   }
 
   public void increaseTargetSpeed(double delta) {
-    targetSpeed += -Math.abs(delta);
+    targetRpm += -Math.abs(delta);
   }
 
   public void decreaseTargetSpeed(double delta) {
-    targetSpeed += Math.abs(delta);
+    targetRpm += Math.abs(delta);
   }
 
   public void intake() {
     if (isIntaking) {
       isIntaking = false;
-      intakeMotor.stopMotor();;
+      intakeMotor.stopMotor();
     }
     else {
       isIntaking = true;
-      intakeMotor.set(targetSpeed);
+       intakeMotor.set(-1);
+      // intakeMotor.setControl(velocityRequest.withVelocity(targetRpm * RPM_TO_RPS));
     }
   }
 
@@ -127,6 +141,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public boolean isIntaking() {
     return isIntaking;
+  }
+
+  public double getIntakeSpeed() {
+    return intakeMotor.getRotorVelocity().getValueAsDouble() / RPM_TO_RPS;
   }
 
   @Override

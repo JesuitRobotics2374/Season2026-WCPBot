@@ -128,7 +128,7 @@ public class Core {
         tab.addBoolean("Rolling", () -> m_hopper.isRolling());
         tab.addBoolean("Intaking", () -> m_intake.isIntaking());
 
-        tab.addDouble("Intake Speed", () -> m_intake.getTargetSpeed());
+        tab.addDouble("Intake Speed", () -> m_intake.getTargetRpm());
 
         tab.addDouble("drive limit", () -> m_powerManager.getDriveLimit());
         tab.addDouble("steer limit", () -> m_powerManager.getSteerLimit());
@@ -140,6 +140,8 @@ public class Core {
 
          tab.addDouble("dist to hub", () -> m_shooter.getDistToHub());
          tab.addDouble("time", () -> DriverStation.getMatchTime());
+
+         tab.addDouble("intake rpm", () -> m_intake.getIntakeSpeed());
     }
 
     private double shooterDampen() {

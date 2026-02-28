@@ -66,12 +66,6 @@
           "data": {
             "commands": [
               {
-                "type": "named",
-                "data": {
-                  "name": "Stop Intake"
-                }
-              },
-              {
                 "type": "path",
                 "data": {
                   "pathName": "NZToShoot"
@@ -87,15 +81,9 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 5.0
-          }
-        },
-        {
           "type": "named",
           "data": {
-            "name": "Start Shoot"
+            "name": "Stop Intake"
           }
         }
       ]
